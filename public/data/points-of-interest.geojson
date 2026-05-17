@@ -1,0 +1,50 @@
+{
+  "type": "FeatureCollection",
+  "features": [
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [36.8215, -1.2365]
+      },
+      "properties": {
+        "id": "poi_waterfall",
+        "name": "Karura Waterfall",
+        "category": "Landmark",
+        "description": "Popular forest landmark. Location to be verified before public launch.",
+        "visitor_note": "Follow official forest signage and ranger guidance.",
+        "status": "Sample data - verify before public launch"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [36.8225, -1.2355]
+      },
+      "properties": {
+        "id": "poi_gate",
+        "name": "Main Gate",
+        "category": "Gate",
+        "description": "Primary entrance to Karura Forest. Location to be verified.",
+        "visitor_note": "Check in at the gate and pay the entrance fee.",
+        "status": "Sample data - verify before public launch"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [36.824, -1.2375]
+      },
+      "properties": {
+        "id": "poi_cafe",
+        "name": "Forest Café",
+        "category": "Facilities",
+        "description": "Café offering refreshments for visitors.",
+        "visitor_note": "Enjoy refreshments and rest here.",
+        "status": "Sample data - verify before public launch"
+      }
+    }
+  ]
+}
