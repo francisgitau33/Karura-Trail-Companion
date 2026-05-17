@@ -1,4 +1,4 @@
-import MapClientComponent from '../components/MapClient';
+import MapClientComponent from '@/components/MapClient';
 
 export default function Home() {
   return <MapClientComponent />;
