@@ -19,8 +19,8 @@ export default function SafetyModal({ open, onClose }: SafetyModalProps) {
       aria-labelledby="safetyModalTitle"
       aria-modal="true"
     >
-      <div className="bg-white p-6 max-w-md rounded shadow overflow-y-auto max-h-[90vh]">
-        <h2 id="safetyModalTitle" className="text-xl font-semibold mb-2">
+      <div className="bg-[var(--card-bg)] text-[var(--main-text)] border border-[var(--sage-border)] p-6 max-w-md rounded shadow overflow-y-auto max-h-[90vh]">
+        <h2 id="safetyModalTitle" className="text-xl font-semibold mb-2 text-[var(--safety-red)]">
           Visitor Safety Note
         </h2>
         <p className="mb-4 text-sm">
@@ -28,7 +28,7 @@ export default function SafetyModal({ open, onClose }: SafetyModalProps) {
         </p>
         <button
           onClick={onClose}
-          className="bg-gray-300 px-4 py-2 rounded text-sm"
+          className="bg-[var(--soft-stone)] text-[var(--charcoal-green)] px-4 py-2 rounded text-sm"
           aria-label="Close safety modal"
         >
           Close
