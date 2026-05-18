@@ -3,3 +3,22 @@
 @tailwind utilities;
 
 /* Additional global styles can go here */
+
+.map-shell .maplibregl-ctrl-top-right {
+  top: 50%;
+  right: 12px;
+  transform: translateY(-50%);
+}
+
+.map-shell .maplibregl-ctrl-top-right .maplibregl-ctrl {
+  margin: 0;
+}
+
+@media (max-width: 640px) {
+  .map-shell .maplibregl-ctrl-top-right {
+    top: auto;
+    right: 12px;
+    bottom: 24px;
+    transform: none;
+  }
+}
