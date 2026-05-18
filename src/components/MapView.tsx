@@ -94,6 +94,35 @@ export default function MapView() {
           if (dataLoadedRef.current) return;
           dataLoadedRef.current = true;
           try {
+            try {
+              const boundaryData = await loadGeoJson('/data/karura-boundary.geojson');
+              map.addSource('karura-boundary', {
+                type: 'geojson',
+                data: boundaryData,
+              });
+              map.addLayer({
+                id: 'karura-boundary-fill',
+                type: 'fill',
+                source: 'karura-boundary',
+                paint: {
+                  'fill-color': '#1F4D3A',
+                  'fill-opacity': 0.08,
+                },
+              });
+              map.addLayer({
+                id: 'karura-boundary-outline',
+                type: 'line',
+                source: 'karura-boundary',
+                paint: {
+                  'line-color': '#145A3A',
+                  'line-width': 4,
+                  'line-opacity': 0.95,
+                },
+              });
+            } catch (err) {
+              console.error('Error loading Karura boundary GeoJSON:', err);
+            }
+
             const [trailsData, poiData, junctionData] = await Promise.all([
               loadGeoJson('/data/trails.geojson'),
               loadGeoJson('/data/points-of-interest.geojson'),
@@ -137,6 +166,7 @@ export default function MapView() {
               id: 'pois-circle',
               type: 'circle',
               source: 'pois',
+              filter: ['!=', ['get', 'category'], 'Gate'],
               paint: {
                 'circle-radius': 7,
                 'circle-color': [
@@ -154,6 +184,36 @@ export default function MapView() {
                 ],
                 'circle-stroke-width': 2,
                 'circle-stroke-color': '#FFFFFF',
+              },
+            });
+            map.addLayer({
+              id: 'gates-circle',
+              type: 'circle',
+              source: 'pois',
+              filter: ['==', ['get', 'category'], 'Gate'],
+              paint: {
+                'circle-radius': 8,
+                'circle-color': '#145A3A',
+                'circle-stroke-width': 2,
+                'circle-stroke-color': '#FFFFFF',
+              },
+            });
+            map.addLayer({
+              id: 'gates-label',
+              type: 'symbol',
+              source: 'pois',
+              minzoom: 14,
+              filter: ['==', ['get', 'category'], 'Gate'],
+              layout: {
+                'text-field': ['get', 'name'],
+                'text-size': 12,
+                'text-offset': [0, -1.4],
+                'text-anchor': 'bottom',
+              },
+              paint: {
+                'text-color': '#145A3A',
+                'text-halo-color': '#FFFFFF',
+                'text-halo-width': 1.5,
               },
             });
             map.addSource('junctions', {
@@ -197,8 +257,8 @@ export default function MapView() {
                 setSelectedTrail(trail);
               });
 
-              map.on('click', 'pois-circle', (e: any) => {
-                if (!map.getLayer('pois-circle')) return;
+              const showPoiPopup = (e: any) => {
+                if (!e.features || !e.features.length) return;
 
                 const feature = e.features && e.features[0];
                 if (!feature) return;
@@ -209,9 +269,24 @@ export default function MapView() {
                   .setLngLat(coords)
                   .setHTML(html)
                   .addTo(map);
+              };
+
+              map.on('click', 'pois-circle', (e: any) => {
+                if (!map.getLayer('pois-circle')) return;
+                showPoiPopup(e);
               });
 
-              ['trails-line', 'pois-circle'].forEach((layerId) => {
+              map.on('click', 'gates-circle', (e: any) => {
+                if (!map.getLayer('gates-circle')) return;
+                showPoiPopup(e);
+              });
+
+              map.on('click', 'gates-label', (e: any) => {
+                if (!map.getLayer('gates-label')) return;
+                showPoiPopup(e);
+              });
+
+              ['trails-line', 'pois-circle', 'gates-circle', 'gates-label'].forEach((layerId) => {
                 map.on('mouseenter', layerId, () => {
                   map.getCanvas().style.cursor = 'pointer';
                 });
@@ -267,11 +342,15 @@ export default function MapView() {
   useEffect(() => {
     const map = mapRef.current;
     if (!map || !dataLoadedRef.current) return;
-    if (!map.getLayer('trails-line') || !map.getLayer('pois-circle')) return;
+    if (!map.getLayer('trails-line') || !map.getLayer('pois-circle') || !map.getLayer('gates-circle')) return;
     // Reset filters
     try {
       map.setFilter('trails-line', null);
-      map.setFilter('pois-circle', null);
+      map.setFilter('pois-circle', ['!=', ['get', 'category'], 'Gate']);
+      map.setFilter('gates-circle', ['==', ['get', 'category'], 'Gate']);
+      if (map.getLayer('gates-label')) {
+        map.setFilter('gates-label', ['==', ['get', 'category'], 'Gate']);
+      }
     } catch (err) {
       // Map not ready
       return;
@@ -287,8 +366,18 @@ export default function MapView() {
       Safety: 'Safety',
     };
     const mapped = categoryMap[selectedCategory];
-    if (mapped) {
+    if (mapped === 'Gate') {
+      map.setFilter('pois-circle', ['==', ['get', 'category'], '__hidden__']);
+      map.setFilter('gates-circle', ['==', ['get', 'category'], 'Gate']);
+      if (map.getLayer('gates-label')) {
+        map.setFilter('gates-label', ['==', ['get', 'category'], 'Gate']);
+      }
+    } else if (mapped) {
       map.setFilter('pois-circle', ['==', ['get', 'category'], mapped]);
+      map.setFilter('gates-circle', ['==', ['get', 'category'], '__hidden__']);
+      if (map.getLayer('gates-label')) {
+        map.setFilter('gates-label', ['==', ['get', 'category'], '__hidden__']);
+      }
     } else {
       // For Walking, Running, Cycling, Family: we could filter trail types if implemented.
       // Future implementation can filter trails by type or difficulty.
