@@ -1,6 +1,6 @@
 "use client";
 
-import React from 'react';
+import React, { useEffect } from 'react';
 
 interface AboutModalProps {
   open: boolean;
@@ -12,6 +12,19 @@ interface AboutModalProps {
  * Modal displaying the About information. Includes a support button that triggers the Donate modal.
  */
 export default function AboutModal({ open, onClose, onSupport }: AboutModalProps) {
+  useEffect(() => {
+    if (!open) return;
+
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') {
+        onClose();
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [open, onClose]);
+
   if (!open) return null;
   return (
     <div
