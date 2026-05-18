@@ -2,7 +2,28 @@
 @tailwind components;
 @tailwind utilities;
 
-/* Additional global styles can go here */
+:root {
+  --forest-header: #1F4D3A;
+  --warm-ivory: #FFF8E6;
+  --mist-cream: #F6F3EA;
+  --soft-stone: #E8ECE6;
+  --charcoal-green: #26352E;
+  --leaf-green: #2F8F5B;
+  --trail-green: #23884B;
+  --trail-green-hover: #1F6F3E;
+  --donate-amber: #D89B45;
+  --safety-red: #B94A3A;
+  --sand-yellow: #FFF1A8;
+  --brown-olive: #7A5B16;
+  --card-bg: #FFFDF6;
+  --sage-border: #D8E1D6;
+  --main-text: #1F2D27;
+}
+
+body {
+  background: var(--mist-cream);
+  color: var(--main-text);
+}
 
 .map-shell .maplibregl-ctrl-top-right {
   top: 50%;
