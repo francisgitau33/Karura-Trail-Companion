@@ -74,6 +74,14 @@ export default function MapView() {
           zoom: mapConfig.defaultZoom,
           attributionControl: true,
         });
+        map.addControl(
+          new maplibre.NavigationControl({
+            showCompass: true,
+            showZoom: true,
+            visualizePitch: true,
+          }),
+          "top-right",
+        );
         mapRef.current = map;
 
         map.on('error', (event: any) => {
