@@ -27,8 +27,8 @@ export default function DonateModal({ open, onClose }: DonateModalProps) {
       aria-labelledby="donateModalTitle"
       aria-modal="true"
     >
-      <div className="bg-white p-6 max-w-md rounded shadow overflow-y-auto max-h-[90vh]">
-        <h2 id="donateModalTitle" className="text-xl font-semibold mb-2">
+      <div className="bg-[var(--card-bg)] text-[var(--main-text)] border border-[var(--sage-border)] p-6 max-w-md rounded shadow overflow-y-auto max-h-[90vh]">
+        <h2 id="donateModalTitle" className="text-xl font-semibold mb-2 text-[var(--donate-amber)]">
           Support Kenya Children's Home
         </h2>
         <p className="mb-2 text-sm">
@@ -45,13 +45,13 @@ export default function DonateModal({ open, onClose }: DonateModalProps) {
         </p>
         <button
           onClick={visitWebsite}
-          className="bg-green-600 text-white py-1 px-2 rounded mb-4 text-sm"
+          className="bg-[var(--donate-amber)] text-white py-1 px-2 rounded mb-4 text-sm"
         >
           Visit Kenya Children's Home Website
         </button>
         <button
           onClick={onClose}
-          className="bg-gray-300 px-4 py-2 rounded text-sm"
+          className="bg-[var(--soft-stone)] text-[var(--charcoal-green)] px-4 py-2 rounded text-sm"
           aria-label="Close donate modal"
         >
           Close
