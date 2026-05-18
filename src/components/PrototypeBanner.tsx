@@ -1,6 +1,6 @@
 "use client";
 
-import { mapConfig } from '@/data/mapConfig';
+import { mapConfig } from '../data/mapConfig';
 
 /**
  * Displays a prototype banner at the top of the map when sample data is active.
