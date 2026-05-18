@@ -123,10 +123,11 @@ export default function MapView() {
               console.error('Error loading Karura boundary GeoJSON:', err);
             }
 
-            const [trailsData, poiData, junctionData] = await Promise.all([
+            const [trailsData, poiData, junctionData, gatesData] = await Promise.all([
               loadGeoJson('/data/trails.geojson'),
               loadGeoJson('/data/points-of-interest.geojson'),
               loadGeoJson('/data/junctions.geojson'),
+              loadGeoJson('/data/gates.geojson'),
             ]);
             map.addSource('trails', {
               type: 'geojson',
@@ -186,11 +187,14 @@ export default function MapView() {
                 'circle-stroke-color': '#FFFFFF',
               },
             });
+            map.addSource('gates', {
+              type: 'geojson',
+              data: gatesData,
+            });
             map.addLayer({
               id: 'gates-circle',
               type: 'circle',
-              source: 'pois',
-              filter: ['==', ['get', 'category'], 'Gate'],
+              source: 'gates',
               paint: {
                 'circle-radius': 8,
                 'circle-color': '#145A3A',
@@ -201,18 +205,17 @@ export default function MapView() {
             map.addLayer({
               id: 'gates-label',
               type: 'symbol',
-              source: 'pois',
+              source: 'gates',
               minzoom: 14,
-              filter: ['==', ['get', 'category'], 'Gate'],
               layout: {
-                'text-field': ['get', 'name'],
+                'text-field': ['get', 'short_name'],
                 'text-size': 12,
                 'text-offset': [0, -1.4],
                 'text-anchor': 'bottom',
               },
               paint: {
                 'text-color': '#145A3A',
-                'text-halo-color': '#FFFFFF',
+                'text-halo-color': '#FFFDF6',
                 'text-halo-width': 1.5,
               },
             });
@@ -271,6 +274,19 @@ export default function MapView() {
                   .addTo(map);
               };
 
+              const showGatePopup = (e: any) => {
+                if (!e.features || !e.features.length) return;
+
+                const feature = e.features[0];
+                const coords = feature.geometry.coordinates.slice();
+                const props = feature.properties as any;
+                const html = `<strong>${props.name}</strong><br />Access: ${props.access}<br />${props.description}<br /><em>${props.visitor_note}</em><br /><small>${props.status}</small>`;
+                new maplibre.Popup()
+                  .setLngLat(coords)
+                  .setHTML(html)
+                  .addTo(map);
+              };
+
               map.on('click', 'pois-circle', (e: any) => {
                 if (!map.getLayer('pois-circle')) return;
                 showPoiPopup(e);
@@ -278,12 +294,12 @@ export default function MapView() {
 
               map.on('click', 'gates-circle', (e: any) => {
                 if (!map.getLayer('gates-circle')) return;
-                showPoiPopup(e);
+                showGatePopup(e);
               });
 
               map.on('click', 'gates-label', (e: any) => {
                 if (!map.getLayer('gates-label')) return;
-                showPoiPopup(e);
+                showGatePopup(e);
               });
 
               ['trails-line', 'pois-circle', 'gates-circle', 'gates-label'].forEach((layerId) => {
@@ -347,9 +363,9 @@ export default function MapView() {
     try {
       map.setFilter('trails-line', null);
       map.setFilter('pois-circle', ['!=', ['get', 'category'], 'Gate']);
-      map.setFilter('gates-circle', ['==', ['get', 'category'], 'Gate']);
+      map.setFilter('gates-circle', null);
       if (map.getLayer('gates-label')) {
-        map.setFilter('gates-label', ['==', ['get', 'category'], 'Gate']);
+        map.setFilter('gates-label', null);
       }
     } catch (err) {
       // Map not ready
@@ -368,9 +384,9 @@ export default function MapView() {
     const mapped = categoryMap[selectedCategory];
     if (mapped === 'Gate') {
       map.setFilter('pois-circle', ['==', ['get', 'category'], '__hidden__']);
-      map.setFilter('gates-circle', ['==', ['get', 'category'], 'Gate']);
+      map.setFilter('gates-circle', null);
       if (map.getLayer('gates-label')) {
-        map.setFilter('gates-label', ['==', ['get', 'category'], 'Gate']);
+        map.setFilter('gates-label', null);
       }
     } else if (mapped) {
       map.setFilter('pois-circle', ['==', ['get', 'category'], mapped]);
