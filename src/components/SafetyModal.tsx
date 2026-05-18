@@ -15,7 +15,7 @@ export default function SafetyModal({ open, onClose }: SafetyModalProps) {
     if (!open) return;
 
     const handleKeyDown = (event: KeyboardEvent) => {
-      if (event.key === 'Escape') {
+      if (event.key === 'Escape' || event.key === 'Esc') {
         onClose();
       }
     };
