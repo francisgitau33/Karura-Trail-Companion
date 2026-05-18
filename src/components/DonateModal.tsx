@@ -1,7 +1,7 @@
 "use client";
 
 import React from 'react';
-import { mapConfig } from '@/data/mapConfig';
+import { mapConfig } from '../data/mapConfig';
 
 interface DonateModalProps {
   open: boolean;
@@ -29,10 +29,10 @@ export default function DonateModal({ open, onClose }: DonateModalProps) {
     >
       <div className="bg-white p-6 max-w-md rounded shadow overflow-y-auto max-h-[90vh]">
         <h2 id="donateModalTitle" className="text-xl font-semibold mb-2">
-          Support Kenya Children’s Home
+          Support Kenya Children's Home
         </h2>
         <p className="mb-2 text-sm">
-          If this free map is useful to you, please consider supporting Kenya Children’s Home.
+          If this free map is useful to you, please consider supporting Kenya Children's Home.
         </p>
         <p className="mb-2 text-sm font-semibold">M-Pesa Donation Details</p>
         <p className="mb-2 text-sm">
@@ -47,7 +47,7 @@ export default function DonateModal({ open, onClose }: DonateModalProps) {
           onClick={visitWebsite}
           className="bg-green-600 text-white py-1 px-2 rounded mb-4 text-sm"
         >
-          Visit Kenya Children’s Home Website
+          Visit Kenya Children's Home Website
         </button>
         <button
           onClick={onClose}
