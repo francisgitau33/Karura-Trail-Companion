@@ -20,6 +20,7 @@ export default function FilterControls({ categories, selected, onSelect }: Filte
           <button
             key={cat}
             onClick={() => onSelect(cat)}
+            aria-pressed={isSelected}
             className={`px-2 py-1 rounded focus:outline-none ${
               isSelected
                 ? 'bg-[var(--leaf-green)] text-white'
