@@ -257,7 +257,7 @@ export default function MapView() {
         onDonate={() => setDonateOpen(true)}
         onSafety={() => setSafetyOpen(true)}
       />
-      <main className="relative flex-1 min-h-[600px]">
+      <main className="map-shell relative flex-1 min-h-[600px]">
         <div ref={mapContainerRef} className="absolute inset-0" />
         {/* Prototype banner */}
         <PrototypeBanner />
