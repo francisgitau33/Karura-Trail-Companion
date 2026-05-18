@@ -1,6 +1,6 @@
 "use client";
 
-import React from 'react';
+import React, { useEffect } from 'react';
 import { mapConfig } from '../data/mapConfig';
 
 interface DonateModalProps {
@@ -12,6 +12,19 @@ interface DonateModalProps {
  * Modal displaying donation details and a button to visit the sponsor's website.
  */
 export default function DonateModal({ open, onClose }: DonateModalProps) {
+  useEffect(() => {
+    if (!open) return;
+
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') {
+        onClose();
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [open, onClose]);
+
   if (!open) return null;
   const { donation } = mapConfig;
   const visitWebsite = () => {
