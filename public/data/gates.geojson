@@ -1,0 +1,95 @@
+{
+  "type": "FeatureCollection",
+  "features": [
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [36.817198, -1.247203]
+      },
+      "properties": {
+        "id": "gate_a_main_gate",
+        "name": "Karura Forest Gate A / Main Gate",
+        "short_name": "Gate A",
+        "category": "Gate",
+        "access": "Main entry / parking area",
+        "description": "Main entry / parking area.",
+        "visitor_note": "Follow official Karura Forest signage and staff guidance.",
+        "status": "Cross-checked working coordinate - verify before public launch",
+        "confidence": "User cross-checked"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [36.843757, -1.239514]
+      },
+      "properties": {
+        "id": "gate_c_sharks_gate_kiambu_road",
+        "name": "Karura Forest Gate C / Sharks Gate / Kiambu Road",
+        "short_name": "Gate C",
+        "category": "Gate",
+        "access": "Kiambu Road / Sharks Gate entrance",
+        "description": "Kiambu Road / Sharks Gate entrance.",
+        "visitor_note": "Follow official Karura Forest signage and staff guidance.",
+        "status": "Cross-checked working coordinate - verify before public launch",
+        "confidence": "User cross-checked"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [36.817538, -1.238187]
+      },
+      "properties": {
+        "id": "gate_d_icraf_pedestrian_gate",
+        "name": "Karura Forest Gate D / ICRAF Pedestrian Gate",
+        "short_name": "Gate D",
+        "category": "Gate",
+        "access": "Pedestrian gate near ICRAF access",
+        "description": "Pedestrian gate near ICRAF access.",
+        "visitor_note": "Follow official Karura Forest signage and staff guidance.",
+        "status": "Cross-checked working coordinate - verify before public launch",
+        "confidence": "User cross-checked"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [36.8151, -1.246127]
+      },
+      "properties": {
+        "id": "gate_e_sigiria_pedestrian_limuru_road",
+        "name": "Karura Forest Gate E / Sigiria Pedestrian Gate / Limuru Road",
+        "short_name": "Gate E",
+        "category": "Gate",
+        "access": "Pedestrian gate off Limuru Road",
+        "description": "Pedestrian gate off Limuru Road.",
+        "visitor_note": "Follow official Karura Forest signage and staff guidance.",
+        "status": "Cross-checked working coordinate - verify before public launch",
+        "confidence": "User cross-checked"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [36.79538, -1.24073]
+      },
+      "properties": {
+        "id": "gate_f_sigiria_thigiri_gate",
+        "name": "Karura Forest Gate F / Sigiria / Thigiri Gate",
+        "short_name": "Gate F",
+        "category": "Gate",
+        "access": "Sigiria / Thigiri entrance",
+        "description": "Sigiria / Thigiri entrance. This remains a working coordinate until separately cross-checked.",
+        "visitor_note": "Follow official Karura Forest signage and staff guidance.",
+        "status": "Working coordinate - verify before public launch",
+        "confidence": "Needs cross-check"
+      }
+    }
+  ]
+}
