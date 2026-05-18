@@ -1,10 +1,12 @@
 "use client";
 
-import dynamic from 'next/dynamic';
+import dynamic from "next/dynamic";
 
-// Dynamically import MapView on the client only
-const MapView = dynamic(() => import('./MapView'), { ssr: false });
+// Dynamically import MapView with no SSR because it relies on browser APIs like `window` and `navigator`.
+const MapView = dynamic(() => import("./MapView"), {
+  ssr: false,
+});
 
-export default function MapClient() {
+export default function MapClientComponent() {
   return <MapView />;
 }
