@@ -94,35 +94,6 @@ export default function MapView() {
           if (dataLoadedRef.current) return;
           dataLoadedRef.current = true;
           try {
-            try {
-              const boundaryData = await loadGeoJson('/data/karura-boundary.geojson');
-              map.addSource('karura-boundary', {
-                type: 'geojson',
-                data: boundaryData,
-              });
-              map.addLayer({
-                id: 'karura-boundary-fill',
-                type: 'fill',
-                source: 'karura-boundary',
-                paint: {
-                  'fill-color': '#1F4D3A',
-                  'fill-opacity': 0.08,
-                },
-              });
-              map.addLayer({
-                id: 'karura-boundary-outline',
-                type: 'line',
-                source: 'karura-boundary',
-                paint: {
-                  'line-color': '#145A3A',
-                  'line-width': 4,
-                  'line-opacity': 0.95,
-                },
-              });
-            } catch (err) {
-              console.error('Error loading Karura boundary GeoJSON:', err);
-            }
-
             const [trailsData, poiData, junctionData, gatesData] = await Promise.all([
               loadGeoJson('/data/trails.geojson'),
               loadGeoJson('/data/points-of-interest.geojson'),
@@ -274,19 +245,6 @@ export default function MapView() {
                   .addTo(map);
               };
 
-              const showGatePopup = (e: any) => {
-                if (!e.features || !e.features.length) return;
-
-                const feature = e.features[0];
-                const coords = feature.geometry.coordinates.slice();
-                const props = feature.properties as any;
-                const html = `<strong>${props.name}</strong><br />Access: ${props.access}<br />${props.description}<br /><em>${props.visitor_note}</em><br /><small>${props.status}</small>`;
-                new maplibre.Popup()
-                  .setLngLat(coords)
-                  .setHTML(html)
-                  .addTo(map);
-              };
-
               map.on('click', 'pois-circle', (e: any) => {
                 if (!map.getLayer('pois-circle')) return;
                 showPoiPopup(e);
@@ -294,12 +252,28 @@ export default function MapView() {
 
               map.on('click', 'gates-circle', (e: any) => {
                 if (!map.getLayer('gates-circle')) return;
-                showGatePopup(e);
+                const feature = e.features && e.features[0];
+                if (!feature) return;
+                const coords = feature.geometry.coordinates.slice();
+                const props = feature.properties as any;
+                const html = `<strong>${props.name}</strong><br />Access: ${props.access}<br />${props.description}<br /><em>${props.visitor_note}</em><br /><small>${props.status}</small>`;
+                new maplibre.Popup()
+                  .setLngLat(coords)
+                  .setHTML(html)
+                  .addTo(map);
               });
 
               map.on('click', 'gates-label', (e: any) => {
                 if (!map.getLayer('gates-label')) return;
-                showGatePopup(e);
+                const feature = e.features && e.features[0];
+                if (!feature) return;
+                const coords = feature.geometry.coordinates.slice();
+                const props = feature.properties as any;
+                const html = `<strong>${props.name}</strong><br />Access: ${props.access}<br />${props.description}<br /><em>${props.visitor_note}</em><br /><small>${props.status}</small>`;
+                new maplibre.Popup()
+                  .setLngLat(coords)
+                  .setHTML(html)
+                  .addTo(map);
               });
 
               ['trails-line', 'pois-circle', 'gates-circle', 'gates-label'].forEach((layerId) => {
