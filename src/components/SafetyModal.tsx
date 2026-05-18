@@ -1,6 +1,6 @@
 "use client";
 
-import React from 'react';
+import React, { useEffect } from 'react';
 
 interface SafetyModalProps {
   open: boolean;
@@ -11,6 +11,19 @@ interface SafetyModalProps {
  * Modal displaying a visitor safety note for the Karura map.
  */
 export default function SafetyModal({ open, onClose }: SafetyModalProps) {
+  useEffect(() => {
+    if (!open) return;
+
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') {
+        onClose();
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [open, onClose]);
+
   if (!open) return null;
   return (
     <div
