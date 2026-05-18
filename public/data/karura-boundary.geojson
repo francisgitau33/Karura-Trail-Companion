@@ -24,8 +24,8 @@
         "id": "karura_forest_boundary",
         "name": "Karura Forest Boundary",
         "category": "Boundary",
-        "description": "Approximate Karura Forest boundary. Verify before public launch.",
-        "status": "Sample data - verify before public launch"
+        "description": "Inaccurate draft boundary retained for reference only. Do not display until properly digitised and verified.",
+        "status": "Disabled - inaccurate draft boundary, pending proper digitisation"
       }
     }
   ]
