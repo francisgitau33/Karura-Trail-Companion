@@ -20,25 +20,25 @@ export default function AboutModal({ open, onClose, onSupport }: AboutModalProps
       aria-labelledby="aboutModalTitle"
       aria-modal="true"
     >
-      <div className="bg-white p-6 max-w-md rounded shadow overflow-y-auto max-h-[90vh]">
+      <div className="bg-[var(--card-bg)] text-[var(--main-text)] border border-[var(--sage-border)] p-6 max-w-md rounded shadow overflow-y-auto max-h-[90vh]">
         <h2 id="aboutModalTitle" className="text-xl font-semibold mb-2">
           About this Map
         </h2>
         <p className="mb-4 text-sm">
-          This free Karura Forest digital trail companion has been developed by Kenya Children’s Home as a public resource for visitors, families, runners, cyclists, and nature lovers. The map helps users explore Karura more confidently by showing trails, gates, landmarks, facilities, and points of interest. Kenya Children’s Home supports vulnerable children and young people through care, education, and community-based programmes.
+          This free Karura Forest digital trail companion has been developed by Kenya Children's Home as a public resource for visitors, families, runners, cyclists, and nature lovers. The map helps users explore Karura more confidently by showing trails, gates, landmarks, facilities, and points of interest. Kenya Children's Home supports vulnerable children and young people through care, education, and community-based programmes.
         </p>
         <button
           onClick={() => {
             onClose();
             onSupport();
           }}
-          className="bg-green-600 text-white py-1 px-2 rounded mb-4 text-sm"
+          className="bg-[var(--donate-amber)] text-white py-1 px-2 rounded mb-4 text-sm"
         >
-          Support Kenya Children’s Home
+          Support Kenya Children's Home
         </button>
         <button
           onClick={onClose}
-          className="bg-gray-300 px-4 py-2 rounded text-sm"
+          className="bg-[var(--soft-stone)] text-[var(--charcoal-green)] px-4 py-2 rounded text-sm"
           aria-label="Close about modal"
         >
           Close
