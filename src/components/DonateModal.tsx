@@ -21,8 +21,8 @@ export default function DonateModal({ open, onClose }: DonateModalProps) {
       }
     };
 
-    window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
+    document.addEventListener('keydown', handleKeyDown, true);
+    return () => document.removeEventListener('keydown', handleKeyDown, true);
   }, [open, onClose]);
 
   if (!open) return null;
