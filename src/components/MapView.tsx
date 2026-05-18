@@ -25,6 +25,8 @@ const CATEGORY_LIST = [
   'Gates',
 ];
 
+const MAP_STYLE_URL = 'https://basemaps.cartocdn.com/gl/positron-gl-style/style.json';
+
 /**
  * Primary map view component. Handles map setup, data loading, user interactions,
  * modals and filters. This component runs only on the client.
@@ -48,137 +50,164 @@ export default function MapView() {
   useEffect(() => {
     // Initialize the map only once
     if (mapRef.current || !mapContainerRef.current) return;
-    // Dynamically require maplibre to avoid SSR issues
-    const maplibre = require('maplibre-gl');
-    const map = new maplibre.Map({
-      container: mapContainerRef.current,
-      style: 'https://demotiles.maplibre.org/style.json',
-      center: [mapConfig.center.lng, mapConfig.center.lat],
-      zoom: mapConfig.defaultZoom,
-      attributionControl: true,
-    });
-    mapRef.current = map;
 
-    // Load data once the map has loaded
-    map.on('load', async () => {
-      if (dataLoadedRef.current) return;
-      dataLoadedRef.current = true;
+    let cancelled = false;
+
+    const loadGeoJson = async (path: string) => {
+      const response = await fetch(path);
+      if (!response.ok) {
+        throw new Error(`Failed to load ${path}: ${response.status}`);
+      }
+      return response.json();
+    };
+
+    const initializeMap = async () => {
       try {
-        const [trailsData, poiData, junctionData] = await Promise.all([
-          fetch('/data/trails.geojson').then((res) => res.json()),
-          fetch('/data/points-of-interest.geojson').then((res) => res.json()),
-          fetch('/data/junctions.geojson').then((res) => res.json()),
-        ]);
-        // Add trails source and layer
-        map.addSource('trails', {
-          type: 'geojson',
-          data: trailsData,
+        const maplibreModule = await import('maplibre-gl');
+        const maplibre = maplibreModule.default ?? maplibreModule;
+        if (cancelled || !mapContainerRef.current) return;
+
+        const map = new maplibre.Map({
+          container: mapContainerRef.current,
+          style: MAP_STYLE_URL,
+          center: [mapConfig.center.lng, mapConfig.center.lat],
+          zoom: mapConfig.defaultZoom,
+          attributionControl: true,
         });
-        map.addLayer({
-          id: 'trails-line',
-          type: 'line',
-          source: 'trails',
-          paint: {
-            'line-color': ['get', 'colour'],
-            'line-width': 4,
-            'line-opacity': 0.8,
-          },
+        mapRef.current = map;
+
+        map.on('error', (event: any) => {
+          console.error('MapLibre runtime error:', event.error);
         });
-        // Points of interest
-        map.addSource('pois', {
-          type: 'geojson',
-          data: poiData,
+
+        map.on('load', async () => {
+          map.resize();
+          if (dataLoadedRef.current) return;
+          dataLoadedRef.current = true;
+          try {
+            const [trailsData, poiData, junctionData] = await Promise.all([
+              loadGeoJson('/data/trails.geojson'),
+              loadGeoJson('/data/points-of-interest.geojson'),
+              loadGeoJson('/data/junctions.geojson'),
+            ]);
+            map.addSource('trails', {
+              type: 'geojson',
+              data: trailsData,
+            });
+            map.addLayer({
+              id: 'trails-line',
+              type: 'line',
+              source: 'trails',
+              paint: {
+                'line-color': ['get', 'colour'],
+                'line-width': 4,
+                'line-opacity': 0.8,
+              },
+            });
+            map.addSource('pois', {
+              type: 'geojson',
+              data: poiData,
+            });
+            map.addLayer({
+              id: 'pois-circle',
+              type: 'circle',
+              source: 'pois',
+              paint: {
+                'circle-radius': 6,
+                'circle-color': '#007cbf',
+                'circle-stroke-width': 1,
+                'circle-stroke-color': '#fff',
+              },
+            });
+            map.addSource('junctions', {
+              type: 'geojson',
+              data: junctionData,
+            });
+            map.addLayer({
+              id: 'junctions-circle',
+              type: 'circle',
+              source: 'junctions',
+              paint: {
+                'circle-radius': 4,
+                'circle-color': '#FF69B4',
+                'circle-stroke-width': 1,
+                'circle-stroke-color': '#fff',
+              },
+            });
+          } catch (err) {
+            console.error('Error loading GeoJSON:', err);
+          }
         });
-        map.addLayer({
-          id: 'pois-circle',
-          type: 'circle',
-          source: 'pois',
-          paint: {
-            'circle-radius': 6,
-            'circle-color': '#007cbf',
-            'circle-stroke-width': 1,
-            'circle-stroke-color': '#fff',
-          },
+
+        map.on('click', 'trails-line', (e: any) => {
+          const features = map.queryRenderedFeatures(e.point, {
+            layers: ['trails-line'],
+          });
+          if (!features.length) return;
+          const props = features[0].properties as any;
+          const trail: TrailProperties = {
+            id: props.id,
+            name: props.name,
+            distance_km: props.distance_km ? Number(props.distance_km) : undefined,
+            estimated_time: props.estimated_time,
+            difficulty: props.difficulty,
+            type: props.type,
+            surface: props.surface,
+            starts_from: props.starts_from,
+            description: props.description,
+            status: props.status,
+          };
+          setSelectedTrail(trail);
         });
-        // Junctions
-        map.addSource('junctions', {
-          type: 'geojson',
-          data: junctionData,
+        map.on('click', (e: any) => {
+          const features = map.queryRenderedFeatures(e.point, {
+            layers: ['trails-line'],
+          });
+          if (!features.length) {
+            setSelectedTrail(null);
+          }
         });
-        map.addLayer({
-          id: 'junctions-circle',
-          type: 'circle',
-          source: 'junctions',
-          paint: {
-            'circle-radius': 4,
-            'circle-color': '#FF69B4',
-            'circle-stroke-width': 1,
-            'circle-stroke-color': '#fff',
-          },
+        map.on('click', 'pois-circle', (e: any) => {
+          const feature = e.features && e.features[0];
+          if (!feature) return;
+          const coords = feature.geometry.coordinates.slice();
+          const props = feature.properties as any;
+          const html = `<strong>${props.name}</strong><br />Category: ${props.category}<br />${props.description}<br /><em>${props.visitor_note}</em><br /><small>${props.status}</small>`;
+          new maplibre.Popup()
+            .setLngLat(coords)
+            .setHTML(html)
+            .addTo(map);
+        });
+        ['trails-line', 'pois-circle'].forEach((layerId) => {
+          map.on('mouseenter', layerId, () => {
+            map.getCanvas().style.cursor = 'pointer';
+          });
+          map.on('mouseleave', layerId, () => {
+            map.getCanvas().style.cursor = '';
+          });
         });
       } catch (err) {
-        console.error('Error loading GeoJSON:', err);
+        console.error('Error initializing MapLibre:', err);
       }
-    });
+    };
 
-    // Click handler for trails
-    map.on('click', 'trails-line', (e: any) => {
-      const features = map.queryRenderedFeatures(e.point, {
-        layers: ['trails-line'],
-      });
-      if (!features.length) return;
-      const props = features[0].properties as any;
-      // Convert properties to typed TrailProperties
-      const trail: TrailProperties = {
-        id: props.id,
-        name: props.name,
-        distance_km: props.distance_km ? Number(props.distance_km) : undefined,
-        estimated_time: props.estimated_time,
-        difficulty: props.difficulty,
-        type: props.type,
-        surface: props.surface,
-        starts_from: props.starts_from,
-        description: props.description,
-        status: props.status,
-      };
-      setSelectedTrail(trail);
-    });
-    // Click anywhere else hides trail info
-    map.on('click', (e: any) => {
-      const features = map.queryRenderedFeatures(e.point, {
-        layers: ['trails-line'],
-      });
-      if (!features.length) {
-        setSelectedTrail(null);
-      }
-    });
-    // Click handler for POIs
-    map.on('click', 'pois-circle', (e: any) => {
-      const feature = e.features && e.features[0];
-      if (!feature) return;
-      const coords = feature.geometry.coordinates.slice();
-      const props = feature.properties as any;
-      const html = `<strong>${props.name}</strong><br />Category: ${props.category}<br />${props.description}<br /><em>${props.visitor_note}</em><br /><small>${props.status}</small>`;
-      // Create popup
-      new (require('maplibre-gl').Popup)()
-        .setLngLat(coords)
-        .setHTML(html)
-        .addTo(map);
-    });
-    // Change cursor style on hover
-    ['trails-line', 'pois-circle'].forEach((layerId) => {
-      map.on('mouseenter', layerId, () => {
-        map.getCanvas().style.cursor = 'pointer';
-      });
-      map.on('mouseleave', layerId, () => {
-        map.getCanvas().style.cursor = '';
-      });
-    });
+    initializeMap();
 
-    // Clean up on unmount
+    const resizeMap = () => {
+      mapRef.current?.resize();
+    };
+    window.addEventListener('resize', resizeMap);
+    const resizeTimeout = window.setTimeout(resizeMap, 0);
+
     return () => {
-      map.remove();
-      mapRef.current = null;
+      cancelled = true;
+      window.removeEventListener('resize', resizeMap);
+      window.clearTimeout(resizeTimeout);
+      if (mapRef.current) {
+        mapRef.current.remove();
+        mapRef.current = null;
+      }
+      dataLoadedRef.current = false;
     };
   }, []);
 
@@ -214,14 +243,14 @@ export default function MapView() {
   }, [selectedCategory]);
 
   return (
-    <div className="relative flex-1 flex flex-col h-full">
+    <div className="relative flex min-h-screen flex-col">
       <Header
         onAbout={() => setAboutOpen(true)}
         onDonate={() => setDonateOpen(true)}
         onSafety={() => setSafetyOpen(true)}
       />
-      <main className="relative flex-1">
-        <div ref={mapContainerRef} className="w-full h-full" />
+      <main className="relative flex-1 min-h-[600px]">
+        <div ref={mapContainerRef} className="absolute inset-0" />
         {/* Prototype banner */}
         <PrototypeBanner />
         {/* Filter controls and location button */}
