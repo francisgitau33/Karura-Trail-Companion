@@ -20,17 +20,19 @@ export default function LocationButton({ map }: LocationButtonProps) {
     }
     setLoading(true);
     navigator.geolocation.getCurrentPosition(
-      (position) => {
+      async (position) => {
         const { latitude, longitude } = position.coords;
         if (map) {
           map.flyTo({ center: [longitude, latitude], zoom: 16 });
-          // Add marker at user location
-          // Avoid duplicate markers by creating one-off marker; multiple clicks will add new markers
-          // Optionally, we could track the marker in state and remove previous.
-          // eslint-disable-next-line no-new
-          new (require('maplibre-gl').Marker)({ color: '#E12D39' })
-            .setLngLat([longitude, latitude])
-            .addTo(map);
+          try {
+            const maplibreModule = await import('maplibre-gl');
+            const maplibre = maplibreModule.default ?? maplibreModule;
+            new maplibre.Marker({ color: '#E12D39' })
+              .setLngLat([longitude, latitude])
+              .addTo(map);
+          } catch (err) {
+            console.error('Error adding location marker:', err);
+          }
         }
         setLoading(false);
       },
@@ -49,7 +51,7 @@ export default function LocationButton({ map }: LocationButtonProps) {
       className="bg-green-600 text-white py-1 px-2 rounded shadow text-xs disabled:opacity-50"
       aria-label="Show my location"
     >
-      {loading ? 'Locating…' : 'Show My Location'}
+      {loading ? 'Locating...' : 'Show My Location'}
     </button>
   );
 }
