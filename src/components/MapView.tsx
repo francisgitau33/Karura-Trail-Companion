@@ -2,15 +2,15 @@
 
 import React, { useEffect, useRef, useState } from 'react';
 import type { Map } from 'maplibre-gl';
-import { mapConfig } from '@/data/mapConfig';
-import Header from '@/components/Header';
-import PrototypeBanner from '@/components/PrototypeBanner';
-import FilterControls from '@/components/FilterControls';
-import LocationButton from '@/components/LocationButton';
-import AboutModal from '@/components/AboutModal';
-import DonateModal from '@/components/DonateModal';
-import SafetyModal from '@/components/SafetyModal';
-import TrailInfoPanel, { TrailProperties } from '@/components/TrailInfoPanel';
+import { mapConfig } from "../data/mapConfig";
+import Header from "./Header";
+import PrototypeBanner from "./PrototypeBanner";
+import FilterControls from "./FilterControls";
+import LocationButton from "./LocationButton";
+import AboutModal from "./AboutModal";
+import DonateModal from "./DonateModal";
+import SafetyModal from "./SafetyModal";
+import TrailInfoPanel, { TrailProperties } from "./TrailInfoPanel";
 
 // Define available categories for filters.
 const CATEGORY_LIST = [
