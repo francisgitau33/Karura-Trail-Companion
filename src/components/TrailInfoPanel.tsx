@@ -27,7 +27,7 @@ export default function TrailInfoPanel({ trail, onClose }: TrailInfoPanelProps) 
   if (!trail) return null;
   return (
     <div
-      className="fixed bottom-0 left-0 right-0 bg-white shadow-lg p-4 max-h-64 overflow-y-auto border-t border-gray-200 z-30"
+      className="fixed bottom-0 left-0 right-0 bg-[var(--card-bg)] text-[var(--main-text)] shadow-lg p-4 max-h-64 overflow-y-auto border-t border-[var(--sage-border)] z-30"
       role="region"
       aria-label="Trail information"
     >
@@ -36,9 +36,9 @@ export default function TrailInfoPanel({ trail, onClose }: TrailInfoPanelProps) 
         <button
           onClick={onClose}
           aria-label="Close trail information"
-          className="text-sm text-gray-500 hover:text-gray-700"
+          className="text-sm text-[var(--charcoal-green)] hover:text-[var(--safety-red)]"
         >
-          ✕
+          x
         </button>
       </div>
       <ul className="text-sm space-y-1">
@@ -65,7 +65,7 @@ export default function TrailInfoPanel({ trail, onClose }: TrailInfoPanelProps) 
         <p className="mt-2 text-sm">{trail.description}</p>
       )}
       {trail.status && (
-        <p className="mt-2 text-xs text-yellow-700 italic">{trail.status}</p>
+        <p className="mt-2 text-xs text-[var(--brown-olive)] italic">{trail.status}</p>
       )}
     </div>
   );
