@@ -107,9 +107,25 @@ export default function MapView() {
               type: 'line',
               source: 'trails',
               paint: {
-                'line-color': ['get', 'colour'],
+                'line-color': [
+                  'match',
+                  ['get', 'type'],
+                  'Walking',
+                  '#2FB85A',
+                  'Walking / Nature',
+                  '#2FB85A',
+                  'Running',
+                  '#D6A21E',
+                  'Walking / Running',
+                  '#D6A21E',
+                  'Cycling',
+                  '#2F80B7',
+                  'Family',
+                  '#8E7CC3',
+                  '#2FB85A',
+                ],
                 'line-width': 4,
-                'line-opacity': 0.8,
+                'line-opacity': 0.9,
               },
             });
             map.addSource('pois', {
@@ -121,10 +137,22 @@ export default function MapView() {
               type: 'circle',
               source: 'pois',
               paint: {
-                'circle-radius': 6,
-                'circle-color': '#007cbf',
-                'circle-stroke-width': 1,
-                'circle-stroke-color': '#fff',
+                'circle-radius': 7,
+                'circle-color': [
+                  'match',
+                  ['get', 'category'],
+                  'Landmark',
+                  '#0077A7',
+                  'Facilities',
+                  '#9A6B3F',
+                  'Gate',
+                  '#145A3A',
+                  'Safety',
+                  '#B94A3A',
+                  '#0077A7',
+                ],
+                'circle-stroke-width': 2,
+                'circle-stroke-color': '#FFFFFF',
               },
             });
             map.addSource('junctions', {
@@ -136,10 +164,10 @@ export default function MapView() {
               type: 'circle',
               source: 'junctions',
               paint: {
-                'circle-radius': 4,
-                'circle-color': '#FF69B4',
-                'circle-stroke-width': 1,
-                'circle-stroke-color': '#fff',
+                'circle-radius': 6,
+                'circle-color': '#145A3A',
+                'circle-stroke-width': 2,
+                'circle-stroke-color': '#FFFFFF',
               },
             });
           } catch (err) {
