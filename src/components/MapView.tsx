@@ -46,6 +46,7 @@ export default function MapView() {
   const mapRef = useRef<Map | null>(null);
   // Keep track of loaded data to avoid re-fetching
   const dataLoadedRef = useRef(false);
+  const interactionsBoundRef = useRef(false);
 
   useEffect(() => {
     // Initialize the map only once
@@ -170,57 +171,71 @@ export default function MapView() {
                 'circle-stroke-color': '#FFFFFF',
               },
             });
+            if (!interactionsBoundRef.current) {
+              interactionsBoundRef.current = true;
+
+              map.on('click', 'trails-line', (e: any) => {
+                if (!map.getLayer('trails-line')) return;
+
+                const features = map.queryRenderedFeatures(e.point, {
+                  layers: ['trails-line'],
+                });
+                if (!features.length) return;
+                const props = features[0].properties as any;
+                const trail: TrailProperties = {
+                  id: props.id,
+                  name: props.name,
+                  distance_km: props.distance_km ? Number(props.distance_km) : undefined,
+                  estimated_time: props.estimated_time,
+                  difficulty: props.difficulty,
+                  type: props.type,
+                  surface: props.surface,
+                  starts_from: props.starts_from,
+                  description: props.description,
+                  status: props.status,
+                };
+                setSelectedTrail(trail);
+              });
+
+              map.on('click', 'pois-circle', (e: any) => {
+                if (!map.getLayer('pois-circle')) return;
+
+                const feature = e.features && e.features[0];
+                if (!feature) return;
+                const coords = feature.geometry.coordinates.slice();
+                const props = feature.properties as any;
+                const html = `<strong>${props.name}</strong><br />Category: ${props.category}<br />${props.description}<br /><em>${props.visitor_note}</em><br /><small>${props.status}</small>`;
+                new maplibre.Popup()
+                  .setLngLat(coords)
+                  .setHTML(html)
+                  .addTo(map);
+              });
+
+              ['trails-line', 'pois-circle'].forEach((layerId) => {
+                map.on('mouseenter', layerId, () => {
+                  map.getCanvas().style.cursor = 'pointer';
+                });
+                map.on('mouseleave', layerId, () => {
+                  map.getCanvas().style.cursor = '';
+                });
+              });
+            }
           } catch (err) {
             console.error('Error loading GeoJSON:', err);
           }
         });
 
-        map.on('click', 'trails-line', (e: any) => {
-          const features = map.queryRenderedFeatures(e.point, {
-            layers: ['trails-line'],
-          });
-          if (!features.length) return;
-          const props = features[0].properties as any;
-          const trail: TrailProperties = {
-            id: props.id,
-            name: props.name,
-            distance_km: props.distance_km ? Number(props.distance_km) : undefined,
-            estimated_time: props.estimated_time,
-            difficulty: props.difficulty,
-            type: props.type,
-            surface: props.surface,
-            starts_from: props.starts_from,
-            description: props.description,
-            status: props.status,
-          };
-          setSelectedTrail(trail);
-        });
         map.on('click', (e: any) => {
+          if (!map.getLayer('trails-line')) {
+            return;
+          }
+
           const features = map.queryRenderedFeatures(e.point, {
             layers: ['trails-line'],
           });
           if (!features.length) {
             setSelectedTrail(null);
           }
-        });
-        map.on('click', 'pois-circle', (e: any) => {
-          const feature = e.features && e.features[0];
-          if (!feature) return;
-          const coords = feature.geometry.coordinates.slice();
-          const props = feature.properties as any;
-          const html = `<strong>${props.name}</strong><br />Category: ${props.category}<br />${props.description}<br /><em>${props.visitor_note}</em><br /><small>${props.status}</small>`;
-          new maplibre.Popup()
-            .setLngLat(coords)
-            .setHTML(html)
-            .addTo(map);
-        });
-        ['trails-line', 'pois-circle'].forEach((layerId) => {
-          map.on('mouseenter', layerId, () => {
-            map.getCanvas().style.cursor = 'pointer';
-          });
-          map.on('mouseleave', layerId, () => {
-            map.getCanvas().style.cursor = '';
-          });
         });
       } catch (err) {
         console.error('Error initializing MapLibre:', err);
@@ -244,6 +259,7 @@ export default function MapView() {
         mapRef.current = null;
       }
       dataLoadedRef.current = false;
+      interactionsBoundRef.current = false;
     };
   }, []);
 
@@ -251,6 +267,7 @@ export default function MapView() {
   useEffect(() => {
     const map = mapRef.current;
     if (!map || !dataLoadedRef.current) return;
+    if (!map.getLayer('trails-line') || !map.getLayer('pois-circle')) return;
     // Reset filters
     try {
       map.setFilter('trails-line', null);
