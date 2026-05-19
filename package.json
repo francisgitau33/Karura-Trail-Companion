@@ -5,15 +5,20 @@
   "scripts": {
     "dev": "next dev",
     "build": "next build",
-    "start": "next start"
+    "start": "next start",
+    "cms:setup-admin": "node scripts/seed-initial-admin.mjs"
   },
   "dependencies": {
+    "bcryptjs": "^2.4.3",
     "next": "latest",
+    "pg": "^8.13.1",
     "react": "latest",
     "react-dom": "latest",
     "maplibre-gl": "^3.5.2"
   },
   "devDependencies": {
+    "@types/bcryptjs": "^2.4.6",
+    "@types/pg": "^8.11.10",
     "typescript": "^5.0.0",
     "@types/react": "^18.0.0",
     "@types/node": "^20.0.0",
