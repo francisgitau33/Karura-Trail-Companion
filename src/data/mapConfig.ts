@@ -9,6 +9,7 @@ export const mapConfig = {
   },
   defaultZoom: 14,
   showPrototypeBanner: true,
+  showBoundary: false,
   donation: {
     paybill: '[Insert PayBill Number]',
     accountReference: 'Karura Map',
