@@ -1,4 +1,4 @@
-import { query } from './db';
+import { isDatabaseConfigured, query } from './db';
 
 export interface SiteSettings {
   appName: string;
@@ -103,6 +103,10 @@ function rowToSettings(row: SiteSettingsRow): SiteSettings {
 }
 
 export async function getSiteSettings(): Promise<SiteSettings> {
+  if (!isDatabaseConfigured()) {
+    return fallbackSiteSettings;
+  }
+
   try {
     const result = await query<SiteSettingsRow>(
       `
