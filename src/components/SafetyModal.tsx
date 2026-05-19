@@ -1,16 +1,18 @@
 "use client";
 
 import React, { useEffect } from 'react';
+import type { SiteSettings } from '../lib/siteSettings';
 
 interface SafetyModalProps {
   open: boolean;
+  settings: SiteSettings;
   onClose: () => void;
 }
 
 /**
  * Modal displaying a visitor safety note for the Karura map.
  */
-export default function SafetyModal({ open, onClose }: SafetyModalProps) {
+export default function SafetyModal({ open, settings, onClose }: SafetyModalProps) {
   useEffect(() => {
     if (!open) return;
 
@@ -34,11 +36,17 @@ export default function SafetyModal({ open, onClose }: SafetyModalProps) {
     >
       <div className="bg-[var(--card-bg)] text-[var(--main-text)] border border-[var(--sage-border)] p-6 max-w-md rounded shadow overflow-y-auto max-h-[90vh]">
         <h2 id="safetyModalTitle" className="text-xl font-semibold mb-2 text-[var(--safety-red)]">
-          Visitor Safety Note
+          {settings.safetyTitle}
         </h2>
         <p className="mb-4 text-sm">
-          This digital map is provided as a visitor aid only. Visitors should follow official Karura Forest signage, stay on permitted trails, observe forest rules, and follow guidance from forest staff and rangers. Trail conditions may change due to weather, maintenance, closures, or conservation requirements.
+          {settings.safetyBody}
         </p>
+        {settings.boundaryDisclaimer ? (
+          <p className="mb-4 text-sm text-[var(--safety-red)]">{settings.boundaryDisclaimer}</p>
+        ) : null}
+        {settings.visitorGuidanceNote ? (
+          <p className="mb-4 text-sm">{settings.visitorGuidanceNote}</p>
+        ) : null}
         <button
           onClick={onClose}
           className="bg-[var(--soft-stone)] text-[var(--charcoal-green)] px-4 py-2 rounded text-sm"
