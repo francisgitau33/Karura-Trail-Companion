@@ -2,7 +2,7 @@ import Link from 'next/link';
 import type { ReactNode } from 'react';
 import { saveSettingsAction } from './actions';
 import { getRecentAuditEvents } from '../../lib/audit';
-import { requirePlatformOwner } from '../../lib/auth';
+import { getCmsSetupStatus, requirePlatformOwner } from '../../lib/auth';
 import { getSiteSettings, SiteSettings } from '../../lib/siteSettings';
 
 export const dynamic = 'force-dynamic';
@@ -59,6 +59,25 @@ export default async function AdminPage({
 }: {
   searchParams?: Promise<{ saved?: string; error?: string }>;
 }) {
+  const setupStatus = getCmsSetupStatus();
+  if (!setupStatus.isConfigured) {
+    return (
+      <main className="min-h-screen bg-[var(--mist-cream)] px-4 py-6 text-[var(--main-text)]">
+        <section className="mx-auto max-w-2xl rounded border border-[var(--sage-border)] bg-[var(--card-bg)] p-6 shadow">
+          <h1 className="mb-2 text-2xl font-semibold">Karura CMS Setup Required</h1>
+          <p className="text-sm text-[var(--charcoal-green)]">{setupStatus.message}</p>
+          <p className="mt-4 text-sm">
+            The public map will continue using fallback content until the CMS database and session
+            secret are configured.
+          </p>
+          <Link className="mt-4 inline-block rounded bg-[var(--soft-stone)] px-4 py-2 text-sm" href="/">
+            Back to map
+          </Link>
+        </section>
+      </main>
+    );
+  }
+
   const session = await requirePlatformOwner();
   const params = await searchParams;
   const [settings, auditEvents] = await Promise.all([getSiteSettings(), getRecentAuditEvents(8)]);
@@ -70,7 +89,7 @@ export default async function AdminPage({
           <div>
             <h1 className="text-2xl font-semibold">Karura CMS</h1>
             <p className="text-sm text-[var(--charcoal-green)]">
-              Signed in as {session.email} · PLATFORM_OWNER
+              Signed in as {session.email} - PLATFORM_OWNER
             </p>
           </div>
           <Link className="rounded bg-[var(--soft-stone)] px-4 py-2 text-sm" href="/admin/logout">
@@ -188,9 +207,9 @@ export default async function AdminPage({
               {auditEvents.map((event) => (
                 <li key={event.id} className="border-b border-[var(--sage-border)] pb-2">
                   <span className="font-medium">{event.action}</span>
-                  {' · '}
+                  {' - '}
                   {event.actor_email ?? 'system'}
-                  {' · '}
+                  {' - '}
                   {new Date(event.created_at).toLocaleString()}
                 </li>
               ))}
