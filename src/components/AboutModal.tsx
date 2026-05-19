@@ -1,9 +1,11 @@
 "use client";
 
 import React, { useEffect } from 'react';
+import type { SiteSettings } from '../lib/siteSettings';
 
 interface AboutModalProps {
   open: boolean;
+  settings: SiteSettings;
   onClose: () => void;
   onSupport: () => void;
 }
@@ -11,7 +13,7 @@ interface AboutModalProps {
 /**
  * Modal displaying the About information. Includes a support button that triggers the Donate modal.
  */
-export default function AboutModal({ open, onClose, onSupport }: AboutModalProps) {
+export default function AboutModal({ open, settings, onClose, onSupport }: AboutModalProps) {
   useEffect(() => {
     if (!open) return;
 
@@ -35,10 +37,10 @@ export default function AboutModal({ open, onClose, onSupport }: AboutModalProps
     >
       <div className="bg-[var(--card-bg)] text-[var(--main-text)] border border-[var(--sage-border)] p-6 max-w-md rounded shadow overflow-y-auto max-h-[90vh]">
         <h2 id="aboutModalTitle" className="text-xl font-semibold mb-2">
-          About this Map
+          {settings.aboutTitle}
         </h2>
         <p className="mb-4 text-sm">
-          This free Karura Forest digital trail companion has been developed by Kenya Children's Home as a public resource for visitors, families, runners, cyclists, and nature lovers. The map helps users explore Karura more confidently by showing trails, gates, landmarks, facilities, and points of interest. Kenya Children's Home supports vulnerable children and young people through care, education, and community-based programmes.
+          {settings.aboutBody}
         </p>
         <button
           onClick={() => {
@@ -47,7 +49,7 @@ export default function AboutModal({ open, onClose, onSupport }: AboutModalProps
           }}
           className="bg-[var(--donate-amber)] text-white py-1 px-2 rounded mb-4 text-sm"
         >
-          Support Kenya Children's Home
+          {settings.aboutCallToActionText}
         </button>
         <button
           onClick={onClose}
