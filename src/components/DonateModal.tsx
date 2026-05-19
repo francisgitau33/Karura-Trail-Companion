@@ -1,17 +1,18 @@
 "use client";
 
 import React, { useEffect } from 'react';
-import { mapConfig } from '../data/mapConfig';
+import type { SiteSettings } from '../lib/siteSettings';
 
 interface DonateModalProps {
   open: boolean;
+  settings: SiteSettings;
   onClose: () => void;
 }
 
 /**
  * Modal displaying donation details and a button to visit the sponsor's website.
  */
-export default function DonateModal({ open, onClose }: DonateModalProps) {
+export default function DonateModal({ open, settings, onClose }: DonateModalProps) {
   useEffect(() => {
     if (!open) return;
 
@@ -26,9 +27,8 @@ export default function DonateModal({ open, onClose }: DonateModalProps) {
   }, [open, onClose]);
 
   if (!open) return null;
-  const { donation } = mapConfig;
   const visitWebsite = () => {
-    const url = donation.websiteUrl;
+    const url = settings.websiteUrl;
     if (url && url.startsWith('http')) {
       window.open(url, '_blank');
     }
@@ -42,25 +42,25 @@ export default function DonateModal({ open, onClose }: DonateModalProps) {
     >
       <div className="bg-[var(--card-bg)] text-[var(--main-text)] border border-[var(--sage-border)] p-6 max-w-md rounded shadow overflow-y-auto max-h-[90vh]">
         <h2 id="donateModalTitle" className="text-xl font-semibold mb-2 text-[var(--donate-amber)]">
-          Support Kenya Children's Home
+          {settings.donateTitle}
         </h2>
         <p className="mb-2 text-sm">
-          If this free map is useful to you, please consider supporting Kenya Children's Home.
+          {settings.donateBody}
         </p>
         <p className="mb-2 text-sm font-semibold">M-Pesa Donation Details</p>
         <p className="mb-2 text-sm">
-          PayBill: {donation.paybill || '[Insert PayBill Number]'}<br />
-          Account Name/Reference: {donation.accountReference || 'Karura Map'}<br />
+          PayBill: {settings.mpesaPaybill || '[Insert PayBill Number]'}<br />
+          Account Name/Reference: {settings.mpesaAccountReference || 'Karura Map'}<br />
           Amount: Any amount welcome
         </p>
         <p className="mb-4 text-sm">
-          Your support helps provide care, education, and community-based programmes for vulnerable children and young people.
+          {settings.donationNote}
         </p>
         <button
           onClick={visitWebsite}
           className="bg-[var(--donate-amber)] text-white py-1 px-2 rounded mb-4 text-sm"
         >
-          Visit Kenya Children's Home Website
+          {settings.websiteButtonText}
         </button>
         <button
           onClick={onClose}
