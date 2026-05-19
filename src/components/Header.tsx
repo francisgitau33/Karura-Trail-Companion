@@ -1,9 +1,9 @@
 "use client";
 
 import React from 'react';
-import { mapConfig } from '../data/mapConfig';
 
 interface HeaderProps {
+  appName: string;
   onAbout: () => void;
   onDonate: () => void;
   onSafety: () => void;
@@ -12,11 +12,11 @@ interface HeaderProps {
 /**
  * Top navigation bar displaying the application name and modal buttons.
  */
-export default function Header({ onAbout, onDonate, onSafety }: HeaderProps) {
+export default function Header({ appName, onAbout, onDonate, onSafety }: HeaderProps) {
   return (
     <header className="flex items-center justify-between p-4 shadow bg-[var(--forest-header)] text-[var(--warm-ivory)]">
       <h1 className="text-lg font-semibold">
-        {mapConfig.appName}
+        {appName}
       </h1>
       <nav className="space-x-4 text-sm">
         <button
