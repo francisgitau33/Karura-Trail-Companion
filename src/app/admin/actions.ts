@@ -41,14 +41,20 @@ export async function saveSettingsAction(formData: FormData) {
     redirect(`/admin?error=${encodeURIComponent(validationError)}`);
   }
 
-  const id = await saveSiteSettings(settings, session.userId);
-  await logAuditEvent({
-    actorUserId: session.userId,
-    actorEmail: session.email,
-    action: 'SITE_SETTINGS_UPDATED',
-    entityType: 'site_settings',
-    entityId: id,
-  });
+  let id: string;
+  try {
+    id = await saveSiteSettings(settings, session.userId);
+    await logAuditEvent({
+      actorUserId: session.userId,
+      actorEmail: session.email,
+      action: 'SITE_SETTINGS_UPDATED',
+      entityType: 'site_settings',
+      entityId: id,
+    });
+  } catch (error) {
+    console.error('CMS settings save failed.', error);
+    redirect('/admin?error=CMS%20database%20is%20not%20ready.%20Check%20Neon%20setup%20and%20migration.');
+  }
 
   revalidatePath('/');
   revalidatePath('/admin');
