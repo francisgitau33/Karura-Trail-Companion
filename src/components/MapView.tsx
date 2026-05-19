@@ -3,6 +3,7 @@
 import React, { useEffect, useRef, useState } from 'react';
 import type { Map } from 'maplibre-gl';
 import { mapConfig } from "../data/mapConfig";
+import type { SiteSettings } from "../lib/siteSettings";
 import Header from "./Header";
 import PrototypeBanner from "./PrototypeBanner";
 import FilterControls from "./FilterControls";
@@ -31,7 +32,7 @@ const MAP_STYLE_URL = 'https://basemaps.cartocdn.com/gl/positron-gl-style/style.
  * Primary map view component. Handles map setup, data loading, user interactions,
  * modals and filters. This component runs only on the client.
  */
-export default function MapView() {
+export default function MapView({ siteSettings }: { siteSettings: SiteSettings }) {
   // Modal state
   const [aboutOpen, setAboutOpen] = useState(false);
   const [donateOpen, setDonateOpen] = useState(false);
@@ -431,6 +432,7 @@ export default function MapView() {
   return (
     <div className="relative flex min-h-screen flex-col">
       <Header
+        appName={siteSettings.appName}
         onAbout={() => setAboutOpen(true)}
         onDonate={() => setDonateOpen(true)}
         onSafety={() => setSafetyOpen(true)}
@@ -438,7 +440,10 @@ export default function MapView() {
       <main className="map-shell relative flex-1 min-h-[600px]">
         <div ref={mapContainerRef} className="absolute inset-0" />
         {/* Prototype banner */}
-        <PrototypeBanner />
+        <PrototypeBanner
+          show={siteSettings.showPrototypeBanner}
+          text={siteSettings.prototypeBannerText}
+        />
         {/* Filter controls and location button */}
         <div className="absolute top-16 left-2 z-10 space-y-2">
           <FilterControls
@@ -454,11 +459,12 @@ export default function MapView() {
       {/* Modals */}
       <AboutModal
         open={aboutOpen}
+        settings={siteSettings}
         onClose={() => setAboutOpen(false)}
         onSupport={() => setDonateOpen(true)}
       />
-      <DonateModal open={donateOpen} onClose={() => setDonateOpen(false)} />
-      <SafetyModal open={safetyOpen} onClose={() => setSafetyOpen(false)} />
+      <DonateModal open={donateOpen} settings={siteSettings} onClose={() => setDonateOpen(false)} />
+      <SafetyModal open={safetyOpen} settings={siteSettings} onClose={() => setSafetyOpen(false)} />
     </div>
   );
 }
