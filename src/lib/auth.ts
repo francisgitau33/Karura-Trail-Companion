@@ -2,12 +2,13 @@ import bcrypt from 'bcryptjs';
 import { cookies } from 'next/headers';
 import { redirect } from 'next/navigation';
 import { createHmac, timingSafeEqual } from 'crypto';
-import { query } from './db';
+import { isDatabaseConfigured, query } from './db';
 import { logAuditEvent } from './audit';
 
 const COOKIE_NAME = 'karura_admin_session';
 const SESSION_MAX_AGE_SECONDS = 60 * 60 * 8;
 const ROLE_PLATFORM_OWNER = 'PLATFORM_OWNER';
+export const CMS_SETUP_MESSAGE = 'CMS is not configured. Please set DATABASE_URL and ADMIN_SESSION_SECRET.';
 
 export interface AdminSession {
   userId: string;
@@ -32,6 +33,22 @@ function getSessionSecret() {
   return secret;
 }
 
+export function getCmsSetupStatus() {
+  const missing: string[] = [];
+  if (!isDatabaseConfigured()) missing.push('DATABASE_URL');
+  if (!process.env.ADMIN_SESSION_SECRET || process.env.ADMIN_SESSION_SECRET.length < 32) {
+    missing.push('ADMIN_SESSION_SECRET');
+  }
+
+  return {
+    isConfigured: missing.length === 0,
+    missing,
+    message: missing.length
+      ? `${CMS_SETUP_MESSAGE} Missing or invalid: ${missing.join(', ')}.`
+      : null,
+  };
+}
+
 function base64Url(input: string) {
   return Buffer.from(input, 'utf8').toString('base64url');
 }
@@ -47,6 +64,7 @@ function createSessionCookie(session: AdminSession) {
 
 function verifySessionCookie(value?: string): AdminSession | null {
   if (!value) return null;
+  if (!getCmsSetupStatus().isConfigured) return null;
   const [payload, signature] = value.split('.');
   if (!payload || !signature) return null;
 
@@ -76,20 +94,30 @@ export async function getAdminSession() {
 }
 
 export async function requirePlatformOwner() {
+  if (!getCmsSetupStatus().isConfigured) {
+    redirect('/admin/login?setup=1');
+  }
+
   const session = await getAdminSession();
   if (!session) {
     redirect('/admin/login');
   }
 
-  const result = await query<{ id: string }>(
-    `
-      select id
-      from admin_users
-      where id = $1 and email = $2 and role = 'PLATFORM_OWNER' and is_active = true
-      limit 1
-    `,
-    [session.userId, session.email],
-  );
+  let result: { rows: Array<{ id: string }> };
+  try {
+    result = await query<{ id: string }>(
+      `
+        select id
+        from admin_users
+        where id = $1 and email = $2 and role = 'PLATFORM_OWNER' and is_active = true
+        limit 1
+      `,
+      [session.userId, session.email],
+    );
+  } catch (error) {
+    console.error('Admin session verification failed.', error);
+    redirect('/admin/login?setup=1');
+  }
 
   if (!result.rows[0]) {
     redirect('/admin/login');
@@ -99,6 +127,10 @@ export async function requirePlatformOwner() {
 }
 
 export async function loginPlatformOwner(emailInput: string, password: string) {
+  if (!getCmsSetupStatus().isConfigured) {
+    return { ok: false, message: CMS_SETUP_MESSAGE };
+  }
+
   const email = emailInput.toLowerCase().trim();
   const result = await query<AdminUserRow>(
     `
