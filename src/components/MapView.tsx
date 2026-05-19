@@ -100,6 +100,39 @@ export default function MapView() {
               loadGeoJson('/data/junctions.geojson'),
               loadGeoJson('/data/gates.geojson'),
             ]);
+            let boundaryData = null;
+            if (mapConfig.showBoundary) {
+              try {
+                boundaryData = await loadGeoJson('/data/karura-boundary.geojson');
+              } catch (boundaryError) {
+                console.error('Error loading review boundary GeoJSON:', boundaryError);
+              }
+            }
+            if (mapConfig.showBoundary && boundaryData) {
+              map.addSource('karura-boundary', {
+                type: 'geojson',
+                data: boundaryData,
+              });
+              map.addLayer({
+                id: 'karura-boundary-fill',
+                type: 'fill',
+                source: 'karura-boundary',
+                paint: {
+                  'fill-color': '#1F4D3A',
+                  'fill-opacity': 0.08,
+                },
+              });
+              map.addLayer({
+                id: 'karura-boundary-outline',
+                type: 'line',
+                source: 'karura-boundary',
+                paint: {
+                  'line-color': '#145A3A',
+                  'line-width': 3,
+                  'line-opacity': 0.9,
+                },
+              });
+            }
             map.addSource('trails', {
               type: 'geojson',
               data: trailsData,
@@ -276,7 +309,28 @@ export default function MapView() {
                   .addTo(map);
               });
 
-              ['trails-line', 'pois-circle', 'gates-circle', 'gates-label'].forEach((layerId) => {
+              if (mapConfig.showBoundary && map.getLayer('karura-boundary-fill')) {
+                map.on('click', 'karura-boundary-fill', (e: any) => {
+                  if (!map.getLayer('karura-boundary-fill')) return;
+                  const feature = e.features && e.features[0];
+                  if (!feature) return;
+                  const props = feature.properties as any;
+                  const html = `<strong>${props.name}</strong><br />Status: ${props.status}<br />Source: ${props.source}<br />Attribution: ${props.attribution}<br /><small>Not official boundary: ${props.not_official_boundary ? 'Yes' : 'No'}</small>`;
+                  new maplibre.Popup()
+                    .setLngLat(e.lngLat)
+                    .setHTML(html)
+                    .addTo(map);
+                });
+              }
+
+              [
+                'trails-line',
+                'pois-circle',
+                'gates-circle',
+                'gates-label',
+                ...(mapConfig.showBoundary ? ['karura-boundary-fill'] : []),
+              ].forEach((layerId) => {
+                if (!map.getLayer(layerId)) return;
                 map.on('mouseenter', layerId, () => {
                   map.getCanvas().style.cursor = 'pointer';
                 });
