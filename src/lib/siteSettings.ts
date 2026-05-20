@@ -130,7 +130,7 @@ export async function getSiteSettings(): Promise<SiteSettings> {
 }
 
 export function validateSiteSettings(input: SiteSettings) {
-  const required: Array<keyof SiteSettings> = [
+  const requiredStringFields = [
     'appName',
     'aboutTitle',
     'aboutBody',
@@ -138,8 +138,11 @@ export function validateSiteSettings(input: SiteSettings) {
     'donateBody',
     'safetyTitle',
     'safetyBody',
-  ];
-  const missing = required.filter((key) => !input[key]?.trim());
+  ] as const;
+  const missing = requiredStringFields.filter((key) => {
+    const value = input[key];
+    return typeof value !== 'string' || value.trim().length === 0;
+  });
 
   if (missing.length) {
     return `${missing.join(', ')} must not be empty.`;
@@ -149,7 +152,7 @@ export function validateSiteSettings(input: SiteSettings) {
     return 'Contact email must be a valid email address.';
   }
 
-  const urls: Array<keyof SiteSettings> = ['websiteUrl', 'linkedinUrl', 'mediumUrl'];
+  const urls = ['websiteUrl', 'linkedinUrl', 'mediumUrl'] as const;
   for (const key of urls) {
     const value = input[key];
     if (!value) continue;
