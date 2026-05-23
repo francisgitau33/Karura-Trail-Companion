@@ -49,6 +49,35 @@ body {
   text-decoration: underline;
 }
 
+.status-pill {
+  border-radius: 999px;
+  padding: 0.25rem 0.6rem;
+  font-size: 0.72rem;
+  font-weight: 700;
+  line-height: 1;
+}
+
+.status-pending {
+  background: var(--sand-yellow);
+  color: var(--brown-olive);
+}
+
+.status-approved {
+  background: rgb(47 143 91 / 0.14);
+  color: var(--leaf-green);
+}
+
+.status-rejected,
+.status-archived {
+  background: rgb(185 74 58 / 0.12);
+  color: var(--safety-red);
+}
+
+.status-merged {
+  background: var(--soft-stone);
+  color: var(--charcoal-green);
+}
+
 .map-shell .maplibregl-ctrl-top-right {
   top: 50%;
   right: 12px;
