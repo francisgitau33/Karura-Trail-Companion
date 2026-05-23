@@ -55,6 +55,10 @@ body {
 }
 
 @media (max-width: 768px) {
+  .map-view-page {
+    min-height: auto;
+  }
+
   .map-shell {
     flex: 0 0 auto;
     height: 70dvh;
@@ -70,6 +74,10 @@ body {
 }
 
 @media (orientation: landscape) and (max-height: 500px) {
+  .map-view-page {
+    min-height: auto;
+  }
+
   .map-shell {
     flex: 0 0 auto;
     height: calc(100dvh - 120px);
