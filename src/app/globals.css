@@ -54,7 +54,13 @@ body {
   margin: 0;
 }
 
-@media (max-width: 640px) {
+@media (max-width: 768px) {
+  .map-shell {
+    flex: 0 0 auto;
+    height: 70dvh;
+    min-height: 500px;
+  }
+
   .map-shell .maplibregl-ctrl-top-right {
     top: auto;
     right: 12px;
@@ -65,7 +71,9 @@ body {
 
 @media (orientation: landscape) and (max-height: 500px) {
   .map-shell {
-    min-height: calc(100dvh - 60px);
+    flex: 0 0 auto;
+    height: calc(100dvh - 120px);
+    min-height: 260px;
   }
 
   .map-shell .maplibregl-ctrl-top-right {
