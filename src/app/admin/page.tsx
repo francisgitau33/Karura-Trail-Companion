@@ -244,10 +244,14 @@ function AdminPlaceSuggestions({ suggestions }: { suggestions: PlaceSuggestion[]
   return (
     <section className="rounded border border-[var(--sage-border)] bg-[var(--card-bg)] p-6 shadow">
       <h2 className="mb-4 text-lg font-semibold">Landmark / Facility Suggestions</h2>
+      <p className="mb-4 text-sm text-[var(--charcoal-green)]">
+        Public suggestions appear on the map only after approval. Rejected, duplicate, and removed
+        suggestions remain in Admin history but are not shown publicly.
+      </p>
       <div className="space-y-6">
         <div>
           <h3 className="mb-3 text-sm font-semibold uppercase tracking-wide text-[var(--charcoal-green)]">
-            Pending Review
+            Pending Review ({pending.length})
           </h3>
           {pending.length ? (
             <div className="space-y-4">
@@ -262,7 +266,7 @@ function AdminPlaceSuggestions({ suggestions }: { suggestions: PlaceSuggestion[]
 
         <div>
           <h3 className="mb-3 text-sm font-semibold uppercase tracking-wide text-[var(--charcoal-green)]">
-            Reviewed Suggestions
+            Reviewed Suggestions ({reviewed.length})
           </h3>
           {reviewed.length ? (
             <div className="space-y-3">
