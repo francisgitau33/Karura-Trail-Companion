@@ -1,7 +1,7 @@
 import { isDatabaseConfigured, query } from './db';
 
 export type PlaceSuggestionType = 'landmark' | 'facility';
-export type PlaceSuggestionStatus = 'pending' | 'approved' | 'rejected' | 'merged';
+export type PlaceSuggestionStatus = 'pending' | 'approved' | 'rejected' | 'merged' | 'archived';
 
 export interface PublicPlaceSuggestion {
   id: string;
@@ -34,12 +34,12 @@ export interface PlaceSuggestionInput {
 
 export interface PlaceSuggestionReviewInput {
   id: string;
-  action: 'approve' | 'reject' | 'merge';
-  type: string;
-  name: string;
-  description: string;
-  latitude: number;
-  longitude: number;
+  action: 'approve' | 'reject' | 'merge' | 'archive';
+  type?: string;
+  name?: string;
+  description?: string;
+  latitude?: number;
+  longitude?: number;
   adminNotes?: string;
 }
 
@@ -232,8 +232,8 @@ export async function getPlaceSuggestionsForAdmin(): Promise<PlaceSuggestion[]> 
           ) as nearby_count
         from place_suggestions ps
         order by
-          case ps.status when 'pending' then 0 when 'approved' then 1 else 2 end,
-          ps.created_at desc
+          case ps.status when 'pending' then 0 else 1 end,
+          coalesce(ps.reviewed_at, ps.updated_at, ps.created_at) desc
         limit 50
       `,
     );
@@ -311,24 +311,28 @@ export async function createPlaceSuggestion(input: PlaceSuggestionInput) {
 }
 
 export function validatePlaceSuggestionReviewInput(input: PlaceSuggestionReviewInput) {
-  if (!['approve', 'reject', 'merge'].includes(input.action)) {
+  if (!['approve', 'reject', 'merge', 'archive'].includes(input.action)) {
     return 'Choose a valid review action.';
-  }
-
-  const publicValidation = validatePlaceSuggestionInput({
-    type: input.type,
-    name: input.name,
-    description: input.description,
-    latitude: input.latitude,
-    longitude: input.longitude,
-  });
-
-  if (input.action === 'approve' && publicValidation) {
-    return publicValidation;
   }
 
   if (!input.id) {
     return 'Suggestion ID is missing.';
+  }
+
+  if (input.action === 'archive') {
+    return null;
+  }
+
+  const publicValidation = validatePlaceSuggestionInput({
+    type: input.type ?? '',
+    name: input.name ?? '',
+    description: input.description ?? '',
+    latitude: input.latitude ?? Number.NaN,
+    longitude: input.longitude ?? Number.NaN,
+  });
+
+  if (input.action === 'approve' && publicValidation) {
+    return publicValidation;
   }
 
   return null;
@@ -340,12 +344,50 @@ export async function reviewPlaceSuggestion(input: PlaceSuggestionReviewInput, r
     throw new Error(validationError);
   }
 
+  const current = await query<{ status: PlaceSuggestionStatus }>(
+    'select status from place_suggestions where id = $1',
+    [input.id],
+  );
+  const currentStatus = current.rows[0]?.status;
+
+  if (!currentStatus) {
+    throw new Error('Suggestion could not be found.');
+  }
+
+  if (input.action === 'archive') {
+    if (currentStatus !== 'approved') {
+      throw new Error('Only approved suggestions can be removed from the public map.');
+    }
+
+    await query(
+      `
+        update place_suggestions
+        set status = 'archived',
+          reviewed_at = coalesce(reviewed_at, now()),
+          archived_at = now(),
+          updated_at = now()
+        where id = $1 and status = 'approved'
+      `,
+      [input.id],
+    );
+
+    return {
+      id: input.id,
+      status: 'archived' as PlaceSuggestionStatus,
+      reviewerId,
+    };
+  }
+
+  if (currentStatus !== 'pending') {
+    throw new Error('Only pending suggestions can be reviewed.');
+  }
+
   const status: PlaceSuggestionStatus =
     input.action === 'approve' ? 'approved' : input.action === 'merge' ? 'merged' : 'rejected';
   const reviewedTimestampColumn =
     status === 'approved'
-      ? 'approved_at = now(), rejected_at = null'
-      : 'rejected_at = now(), approved_at = null';
+      ? 'approved_at = now(), rejected_at = null, archived_at = null'
+      : 'rejected_at = now(), approved_at = null, archived_at = null';
 
   await query(
     `
@@ -363,11 +405,11 @@ export async function reviewPlaceSuggestion(input: PlaceSuggestionReviewInput, r
       where id = $8
     `,
     [
-      input.type,
-      cleanText(input.name, 80),
-      cleanText(input.description, 500),
-      input.latitude,
-      input.longitude,
+      input.type ?? '',
+      cleanText(input.name ?? '', 80),
+      cleanText(input.description ?? '', 500),
+      input.latitude ?? 0,
+      input.longitude ?? 0,
       status,
       cleanText(input.adminNotes ?? '', 500) || null,
       input.id,
