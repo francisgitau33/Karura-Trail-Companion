@@ -25,6 +25,25 @@ body {
   color: var(--main-text);
 }
 
+.site-footer {
+  border-top: 1px solid rgb(20 83 45 / 0.15);
+  background: rgb(250 248 239 / 0.95);
+  padding: 0.9rem 1rem;
+  text-align: center;
+  font-size: 0.9rem;
+  color: #123225;
+}
+
+.site-footer a {
+  color: #14532d;
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.site-footer a:hover {
+  text-decoration: underline;
+}
+
 .map-shell .maplibregl-ctrl-top-right {
   top: 50%;
   right: 12px;
