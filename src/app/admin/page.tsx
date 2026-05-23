@@ -57,7 +57,7 @@ function Section({ title, children }: { title: string; children: ReactNode }) {
 export default async function AdminPage({
   searchParams,
 }: {
-  searchParams?: Promise<{ saved?: string; error?: string }>;
+  searchParams?: Promise<{ saved?: string; logoSaved?: string; error?: string }>;
 }) {
   const setupStatus = getCmsSetupStatus();
   if (!setupStatus.isConfigured) {
@@ -102,6 +102,11 @@ export default async function AdminPage({
             Settings saved.
           </p>
         ) : null}
+        {params?.logoSaved ? (
+          <p className="rounded border border-[var(--sage-border)] bg-[var(--card-bg)] px-4 py-3 text-sm">
+            Logo uploaded.
+          </p>
+        ) : null}
         {params?.error ? (
           <p className="rounded border border-[var(--safety-red)] bg-[var(--card-bg)] px-4 py-3 text-sm text-[var(--safety-red)]">
             {params.error}
@@ -139,10 +144,12 @@ export default async function AdminPage({
               value={settings.aboutCallToActionText}
             />
             <div className="md:col-span-2">
-              <label className="block text-sm">
-                <span className="font-medium">Official KCH Logo</span>
+              <div className="block text-sm">
+                <label className="font-medium" htmlFor="officialLogoFile">
+                  Official KCH Logo
+                </label>
                 <span className="mt-1 block text-xs text-[var(--charcoal-green)]">
-                  Upload the logo displayed in the About and Donate popups. PNG, JPG, JPEG, or WebP only. Maximum 1 MB.
+                  Choose a logo file, then click Upload logo. PNG, JPG, JPEG, or WebP only. Maximum 1 MB.
                 </span>
                 {settings.officialLogoSrc ? (
                   <div className="mt-3 rounded border border-[var(--sage-border)] bg-white p-3">
@@ -161,12 +168,21 @@ export default async function AdminPage({
                   </p>
                 )}
                 <input
+                  id="officialLogoFile"
                   name="officialLogoFile"
                   type="file"
                   accept=".png,.jpg,.jpeg,.webp,image/png,image/jpeg,image/webp"
                   className="mt-3 block w-full text-sm"
                 />
-              </label>
+                <button
+                  type="submit"
+                  name="intent"
+                  value="upload-logo"
+                  className="mt-3 rounded bg-[var(--trail-green)] px-4 py-2 text-sm font-semibold text-white"
+                >
+                  Upload logo
+                </button>
+              </div>
             </div>
             <div className="md:col-span-2">
               <TextArea label="About body" name="aboutBody" value={settings.aboutBody} />
@@ -225,6 +241,8 @@ export default async function AdminPage({
 
           <button
             type="submit"
+            name="intent"
+            value="save-settings"
             className="rounded bg-[var(--trail-green)] px-4 py-2 text-sm font-semibold text-white"
           >
             Save settings
