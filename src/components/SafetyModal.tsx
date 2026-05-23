@@ -49,7 +49,7 @@ export default function SafetyModal({ open, settings, onClose }: SafetyModalProp
         ) : null}
         <button
           onClick={onClose}
-          className="bg-[var(--soft-stone)] text-[var(--charcoal-green)] px-4 py-2 rounded text-sm"
+          className="min-h-10 bg-[var(--soft-stone)] text-[var(--charcoal-green)] px-4 py-2 rounded text-sm"
           aria-label="Close safety modal"
         >
           Close
