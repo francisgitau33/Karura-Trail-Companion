@@ -2,11 +2,17 @@
 
 import dynamic from "next/dynamic";
 import type { SiteSettings } from "../lib/siteSettings";
+import Footer from "./Footer";
 
 const MapView = dynamic(() => import("./MapView"), {
   ssr: false,
 });
 
 export default function MapClientComponent({ siteSettings }: { siteSettings: SiteSettings }) {
-  return <MapView siteSettings={siteSettings} />;
+  return (
+    <>
+      <MapView siteSettings={siteSettings} />
+      <Footer contactEmail={siteSettings.contactEmail} />
+    </>
+  );
 }
