@@ -13,6 +13,7 @@ interface LocationButtonProps {
 export default function LocationButton({ map }: LocationButtonProps) {
   const [loading, setLoading] = useState(false);
   const [enabled, setEnabled] = useState(false);
+  const [message, setMessage] = useState('');
   const markerRef = useRef<Marker | null>(null);
 
   useEffect(() => {
@@ -22,11 +23,33 @@ export default function LocationButton({ map }: LocationButtonProps) {
     };
   }, []);
 
+  useEffect(() => {
+    if (map) return;
+
+    markerRef.current?.remove();
+    markerRef.current = null;
+    setEnabled(false);
+    setLoading(false);
+  }, [map]);
+
   const hideLocation = () => {
     markerRef.current?.remove();
     markerRef.current = null;
     setEnabled(false);
     setLoading(false);
+    setMessage('');
+  };
+
+  const getLocationErrorMessage = (error: GeolocationPositionError) => {
+    if (error.code === error.PERMISSION_DENIED) {
+      return 'Location permission was denied. Please allow location access in your browser settings and try again.';
+    }
+
+    if (error.code === error.TIMEOUT) {
+      return 'Location request timed out. Please try again.';
+    }
+
+    return 'Your location could not be determined. Please check that location services are enabled and try again.';
   };
 
   const handleClick = async () => {
@@ -35,35 +58,49 @@ export default function LocationButton({ map }: LocationButtonProps) {
       return;
     }
 
-    if (!navigator.geolocation) {
-      alert('Geolocation is not supported by your browser.');
+    if (!map) {
+      setMessage('The map is still loading. Please try again in a moment.');
       return;
     }
+
+    if (typeof window === 'undefined' || !('geolocation' in navigator)) {
+      setMessage('Geolocation is not supported by this browser.');
+      return;
+    }
+
+    setMessage('');
     setLoading(true);
     navigator.geolocation.getCurrentPosition(
       async (position) => {
         const { latitude, longitude } = position.coords;
-        if (map) {
+        try {
+          const maplibreModule = await import('maplibre-gl');
+          const maplibre = maplibreModule.default ?? maplibreModule;
+          markerRef.current?.remove();
+          markerRef.current = new maplibre.Marker({ color: '#E12D39' })
+            .setLngLat([longitude, latitude])
+            .addTo(map);
           map.flyTo({ center: [longitude, latitude], zoom: 16 });
-          try {
-            const maplibreModule = await import('maplibre-gl');
-            const maplibre = maplibreModule.default ?? maplibreModule;
-            markerRef.current?.remove();
-            markerRef.current = new maplibre.Marker({ color: '#E12D39' })
-              .setLngLat([longitude, latitude])
-              .addTo(map);
-            setEnabled(true);
-          } catch (err) {
-            console.error('Error adding location marker:', err);
-          }
+          setEnabled(true);
+          setMessage('');
+        } catch (err) {
+          console.error('Error adding location marker:', err);
+          setEnabled(false);
+          setMessage('Your location was found, but the map could not display it. Please try again.');
+        } finally {
+          setLoading(false);
         }
-        setLoading(false);
       },
-      () => {
-        alert('Unable to retrieve your location. Check browser permissions and try again.');
+      (error) => {
+        setEnabled(false);
         setLoading(false);
+        setMessage(getLocationErrorMessage(error));
       },
-      { enableHighAccuracy: true },
+      {
+        enableHighAccuracy: true,
+        timeout: 10000,
+        maximumAge: 30000,
+      },
     );
   };
 
@@ -71,13 +108,18 @@ export default function LocationButton({ map }: LocationButtonProps) {
     <div className="max-w-[15rem] space-y-1">
       <button
         onClick={handleClick}
-        disabled={loading}
+        disabled={loading || !map}
         aria-pressed={enabled}
         className="min-h-10 rounded bg-[var(--trail-green)] px-3 py-2 text-xs text-white shadow transition-colors hover:bg-[var(--trail-green-hover)] focus:outline-none disabled:opacity-50"
         aria-label={enabled ? 'Hide my location' : 'Show my location'}
       >
-        {loading ? 'Locating...' : enabled ? 'Hide My Location' : 'Show My Location'}
+        {loading ? 'Locating...' : enabled ? 'Hide My Location' : map ? 'Show My Location' : 'Map Loading...'}
       </button>
+      {message ? (
+        <p className="rounded bg-[var(--sand-yellow)] px-2 py-1 text-[10px] leading-snug text-[var(--brown-olive)] shadow">
+          {message}
+        </p>
+      ) : null}
       <p className="rounded bg-[var(--card-bg)]/90 px-2 py-1 text-[10px] leading-snug text-[var(--charcoal-green)] shadow">
         Location is used only in your browser and is not stored.
       </p>
