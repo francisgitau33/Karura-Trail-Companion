@@ -434,7 +434,7 @@ export default function MapView({ siteSettings }: { siteSettings: SiteSettings }
   }, [selectedCategory]);
 
   return (
-    <div className="relative flex min-h-screen flex-col">
+    <div className="map-view-page relative flex min-h-screen flex-col">
       <Header
         appName={siteSettings.appName}
         onAbout={() => setAboutOpen(true)}
