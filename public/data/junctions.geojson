@@ -1,37 +1,4 @@
 {
   "type": "FeatureCollection",
-  "features": [
-    {
-      "type": "Feature",
-      "geometry": {
-        "type": "Point",
-        "coordinates": [36.822, -1.236]
-      },
-      "properties": {
-        "id": "junction_01",
-        "junction_number": "J1",
-        "name": "Junction 1",
-        "connected_routes": ["5 km Trail", "Waterfall and Caves Route"],
-        "nearest_gate": "Main Gate",
-        "navigation_note": "To be verified against official Karura signage.",
-        "status": "Sample data - verify before public launch"
-      }
-    },
-    {
-      "type": "Feature",
-      "geometry": {
-        "type": "Point",
-        "coordinates": [36.825, -1.237]
-      },
-      "properties": {
-        "id": "junction_02",
-        "junction_number": "J2",
-        "name": "Junction 2",
-        "connected_routes": ["5 km Trail"],
-        "nearest_gate": "Main Gate",
-        "navigation_note": "To be verified against official Karura signage.",
-        "status": "Sample data - verify before public launch"
-      }
-    }
-  ]
+  "features": []
 }
