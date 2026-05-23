@@ -36,13 +36,12 @@ export default function AboutModal({ open, settings, onClose, onSupport }: About
       aria-modal="true"
     >
       <div className="max-h-[90vh] w-[calc(100vw-2rem)] max-w-md overflow-y-auto rounded border border-[var(--sage-border)] bg-[var(--card-bg)] p-5 text-[var(--main-text)] shadow sm:p-6">
-        {settings.officialLogoUrl ? (
+        {settings.officialLogoSrc ? (
           <img
-            src={settings.officialLogoUrl}
+            src={settings.officialLogoSrc}
             alt="Kenya Children's Home logo"
-            className="mb-4 max-h-16 w-auto max-w-full object-contain"
+            className="mx-auto mb-4 h-auto max-h-16 max-w-[160px] object-contain"
             loading="lazy"
-            referrerPolicy="no-referrer"
           />
         ) : null}
         <h2 id="aboutModalTitle" className="text-xl font-semibold mb-2">
