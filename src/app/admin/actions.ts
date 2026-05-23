@@ -129,7 +129,10 @@ export async function reviewPlaceSuggestionAction(formData: FormData) {
     const result = await reviewPlaceSuggestion(
       {
         id,
-        action: action === 'approve' || action === 'reject' || action === 'merge' ? action : 'reject',
+        action:
+          action === 'approve' || action === 'reject' || action === 'merge' || action === 'archive'
+            ? action
+            : 'reject',
         type: String(formData.get('type') ?? ''),
         name: String(formData.get('name') ?? ''),
         description: String(formData.get('description') ?? ''),
