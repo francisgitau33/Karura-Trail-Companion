@@ -21,21 +21,21 @@ export default function Header({ appName, onAbout, onDonate, onSafety }: HeaderP
       <nav className="flex flex-wrap justify-end gap-1 text-xs sm:gap-2 sm:text-sm">
         <button
           onClick={onAbout}
-          className="min-h-10 rounded px-2 focus:outline-none hover:underline"
+          className="min-h-10 rounded px-2 transition-colors focus:outline-none hover:underline"
           aria-label="About"
         >
           About
         </button>
         <button
           onClick={onDonate}
-          className="min-h-10 rounded px-2 focus:outline-none hover:text-[var(--donate-amber)] hover:underline"
+          className="min-h-10 rounded px-2 transition-colors focus:outline-none hover:text-[var(--donate-amber)] hover:underline"
           aria-label="Donate"
         >
           Donate
         </button>
         <button
           onClick={onSafety}
-          className="min-h-10 rounded px-2 focus:outline-none hover:text-[var(--safety-red)] hover:underline"
+          className="min-h-10 rounded px-2 transition-colors focus:outline-none hover:text-[var(--safety-red)] hover:underline"
           aria-label="Safety"
         >
           Safety
