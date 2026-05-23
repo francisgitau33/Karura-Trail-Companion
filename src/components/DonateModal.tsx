@@ -40,7 +40,16 @@ export default function DonateModal({ open, settings, onClose }: DonateModalProp
       aria-labelledby="donateModalTitle"
       aria-modal="true"
     >
-      <div className="bg-[var(--card-bg)] text-[var(--main-text)] border border-[var(--sage-border)] p-6 max-w-md rounded shadow overflow-y-auto max-h-[90vh]">
+      <div className="max-h-[90vh] w-[calc(100vw-2rem)] max-w-md overflow-y-auto rounded border border-[var(--sage-border)] bg-[var(--card-bg)] p-5 text-[var(--main-text)] shadow sm:p-6">
+        {settings.officialLogoUrl ? (
+          <img
+            src={settings.officialLogoUrl}
+            alt="Kenya Children's Home logo"
+            className="mb-4 max-h-16 w-auto max-w-full object-contain"
+            loading="lazy"
+            referrerPolicy="no-referrer"
+          />
+        ) : null}
         <h2 id="donateModalTitle" className="text-xl font-semibold mb-2 text-[var(--donate-amber)]">
           {settings.donateTitle}
         </h2>
