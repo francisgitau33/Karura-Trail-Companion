@@ -23,6 +23,7 @@ export default function SuggestPlaceModal({
   const [contactEmail, setContactEmail] = useState('');
   const [website, setWebsite] = useState('');
   const [submitting, setSubmitting] = useState(false);
+  const [submitted, setSubmitted] = useState(false);
   const [message, setMessage] = useState('');
   const [nearbyWarning, setNearbyWarning] = useState(false);
 
@@ -43,6 +44,8 @@ export default function SuggestPlaceModal({
 
   const submitSuggestion = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
+    if (submitted) return;
+
     if (!coordinates) {
       setMessage('Choose a location on the map before submitting.');
       return;
@@ -74,6 +77,7 @@ export default function SuggestPlaceModal({
         setDescription('');
         setContactEmail('');
         setWebsite('');
+        setSubmitted(true);
         onSubmitted();
       }
     } catch (error) {
@@ -100,13 +104,13 @@ export default function SuggestPlaceModal({
             Suggest Landmark / Facility
           </h2>
           <p className="mt-2 text-sm text-[var(--charcoal-green)]">
-            Help improve the Karura Trail Companion by suggesting a landmark or facility.
-            Suggestions are reviewed before they appear on the public map.
+            Help improve Karura Trail Companion by suggesting a landmark or facility. Suggestions
+            are reviewed before they appear on the public map.
           </p>
         </div>
 
         <label className="block text-sm">
-          <span className="font-medium">What are you suggesting?</span>
+          <span className="font-medium">Type of suggestion</span>
           <select
             value={type}
             onChange={(event) => setType(event.target.value)}
@@ -118,7 +122,7 @@ export default function SuggestPlaceModal({
         </label>
 
         <label className="block text-sm">
-          <span className="font-medium">Name of place</span>
+          <span className="font-medium">Place name</span>
           <input
             value={name}
             onChange={(event) => setName(event.target.value)}
@@ -162,9 +166,7 @@ export default function SuggestPlaceModal({
 
         <div className="rounded border border-[var(--sage-border)] bg-white p-3 text-sm">
           {coordinates ? (
-            <p>
-              Selected location: {coordinates.latitude.toFixed(6)}, {coordinates.longitude.toFixed(6)}
-            </p>
+            <p>Location selected.</p>
           ) : (
             <p>No location selected yet.</p>
           )}
@@ -190,13 +192,27 @@ export default function SuggestPlaceModal({
         ) : null}
 
         <div className="flex flex-wrap gap-2">
-          <button
-            type="submit"
-            disabled={submitting}
-            className="min-h-10 rounded bg-[var(--trail-green)] px-4 py-2 text-sm font-semibold text-white disabled:opacity-60"
-          >
-            {submitting ? 'Submitting...' : 'Submit suggestion'}
-          </button>
+          {submitted ? (
+            <button
+              type="button"
+              onClick={() => {
+                setSubmitted(false);
+                setMessage('');
+                setNearbyWarning(false);
+              }}
+              className="min-h-10 rounded bg-[var(--trail-green)] px-4 py-2 text-sm font-semibold text-white"
+            >
+              Submit another suggestion
+            </button>
+          ) : (
+            <button
+              type="submit"
+              disabled={submitting}
+              className="min-h-10 rounded bg-[var(--trail-green)] px-4 py-2 text-sm font-semibold text-white disabled:opacity-60"
+            >
+              {submitting ? 'Submitting...' : 'Submit suggestion'}
+            </button>
+          )}
           <button
             type="button"
             onClick={onClose}
