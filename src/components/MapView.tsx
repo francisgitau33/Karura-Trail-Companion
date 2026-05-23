@@ -10,6 +10,7 @@ import PrototypeBanner from "./PrototypeBanner";
 import FilterControls from "./FilterControls";
 import LocationButton from "./LocationButton";
 import AboutModal from "./AboutModal";
+import BoundaryInfoModal from "./BoundaryInfoModal";
 import DonateModal from "./DonateModal";
 import NatureAnimations from "./NatureAnimations";
 import SafetyModal from "./SafetyModal";
@@ -41,6 +42,7 @@ export default function MapView({
   const [aboutOpen, setAboutOpen] = useState(false);
   const [donateOpen, setDonateOpen] = useState(false);
   const [safetyOpen, setSafetyOpen] = useState(false);
+  const [boundaryInfoOpen, setBoundaryInfoOpen] = useState(false);
   const [suggestOpen, setSuggestOpen] = useState(false);
   const [choosingSuggestionLocation, setChoosingSuggestionLocation] = useState(false);
   const [suggestionCoordinates, setSuggestionCoordinates] = useState<{
@@ -396,27 +398,12 @@ export default function MapView({
                   .addTo(map);
               });
 
-              if (mapConfig.showBoundary && map.getLayer('karura-boundary-fill')) {
-                map.on('click', 'karura-boundary-fill', (e: any) => {
-                  if (!map.getLayer('karura-boundary-fill')) return;
-                  const feature = e.features && e.features[0];
-                  if (!feature) return;
-                  const props = feature.properties as any;
-                  const html = `<strong>${props.name}</strong><br />Status: ${props.status}<br />Source: ${props.source}<br />Attribution: ${props.attribution}<br /><small>Not official boundary: ${props.not_official_boundary ? 'Yes' : 'No'}</small>`;
-                  new maplibre.Popup()
-                    .setLngLat(e.lngLat)
-                    .setHTML(html)
-                    .addTo(map);
-                });
-              }
-
               [
                 'trails-line',
                 'pois-circle',
                 'approved-suggestions-circle',
                 'gates-circle',
                 'gates-label',
-                ...(mapConfig.showBoundary ? ['karura-boundary-fill'] : []),
               ].forEach((layerId) => {
                 if (!map.getLayer(layerId)) return;
                 map.on('mouseenter', layerId, () => {
@@ -580,6 +567,15 @@ export default function MapView({
               Suggest Place
             </button>
           ) : null}
+          {mapConfig.showBoundary ? (
+            <button
+              type="button"
+              onClick={() => setBoundaryInfoOpen(true)}
+              className="min-h-10 rounded border border-[var(--forest-header)] bg-[var(--card-bg)] px-3 py-2 text-left text-xs font-semibold text-[var(--forest-header)] shadow"
+            >
+              Karura Forest Boundary
+            </button>
+          ) : null}
           {choosingSuggestionLocation ? (
             <p className="max-w-[15rem] rounded bg-[var(--sand-yellow)] px-2 py-1 text-[10px] leading-snug text-[var(--brown-olive)] shadow">
               Tap or click the map to choose the location.
@@ -599,6 +595,7 @@ export default function MapView({
       />
       <DonateModal open={donateOpen} settings={siteSettings} onClose={() => setDonateOpen(false)} />
       <SafetyModal open={safetyOpen} settings={siteSettings} onClose={() => setSafetyOpen(false)} />
+      <BoundaryInfoModal open={boundaryInfoOpen} onClose={() => setBoundaryInfoOpen(false)} />
       <SuggestPlaceModal
         open={suggestOpen}
         coordinates={suggestionCoordinates}
