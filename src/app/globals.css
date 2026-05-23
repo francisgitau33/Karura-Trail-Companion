@@ -43,3 +43,16 @@ body {
     transform: none;
   }
 }
+
+@media (orientation: landscape) and (max-height: 500px) {
+  .map-shell {
+    min-height: calc(100dvh - 60px);
+  }
+
+  .map-shell .maplibregl-ctrl-top-right {
+    top: 50%;
+    right: max(12px, env(safe-area-inset-right));
+    bottom: auto;
+    transform: translateY(-50%);
+  }
+}
