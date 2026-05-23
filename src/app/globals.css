@@ -88,6 +88,14 @@ body {
   margin: 0;
 }
 
+.map-control-panel {
+  width: fit-content;
+}
+
+.map-filter-row {
+  scrollbar-width: thin;
+}
+
 @media (max-width: 768px) {
   .map-view-page {
     min-height: auto;
@@ -102,6 +110,14 @@ body {
   .site-footer {
     padding: 0.55rem 0.75rem;
     font-size: 0.85rem;
+  }
+
+  .map-control-panel {
+    max-width: calc(100vw - 1rem);
+  }
+
+  .map-filter-row {
+    max-width: calc(100vw - 2rem);
   }
 
   .map-shell .maplibregl-ctrl-top-right {
