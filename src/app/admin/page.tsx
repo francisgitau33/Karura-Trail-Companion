@@ -137,6 +137,12 @@ export default async function AdminPage({
               name="aboutCallToActionText"
               value={settings.aboutCallToActionText}
             />
+            <Field
+              label="Official logo URL"
+              name="officialLogoUrl"
+              value={settings.officialLogoUrl}
+              type="url"
+            />
             <div className="md:col-span-2">
               <TextArea label="About body" name="aboutBody" value={settings.aboutBody} />
             </div>
