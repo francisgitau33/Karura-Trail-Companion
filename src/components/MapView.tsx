@@ -550,34 +550,36 @@ export default function MapView({
           show={siteSettings.showPrototypeBanner}
           text={siteSettings.prototypeBannerText}
         />
-        {/* Filter controls and location button */}
-        <div className="absolute top-16 left-2 z-10 space-y-2">
+        {/* Filter controls and map action buttons */}
+        <div className="map-control-panel absolute left-2 top-16 z-10 max-w-[calc(100vw-1rem)] rounded-md border border-[var(--sage-border)] bg-[var(--card-bg)]/80 p-1.5 shadow backdrop-blur-sm">
           <FilterControls
             categories={CATEGORY_LIST}
             selected={selectedCategory}
             onSelect={(cat) => setSelectedCategory(cat === selectedCategory ? 'All' : cat)}
           />
-          <LocationButton map={mapInstance} />
-          {siteSettings.enablePlaceSuggestions ? (
-            <button
-              type="button"
-              onClick={() => setSuggestOpen(true)}
-              className="min-h-10 rounded bg-[var(--donate-amber)] px-3 py-2 text-xs font-semibold text-white shadow"
-            >
-              Suggest Place
-            </button>
-          ) : null}
-          {mapConfig.showBoundary ? (
-            <button
-              type="button"
-              onClick={() => setBoundaryInfoOpen(true)}
-              className="min-h-10 rounded border border-[var(--forest-header)] bg-[var(--card-bg)] px-3 py-2 text-left text-xs font-semibold text-[var(--forest-header)] shadow"
-            >
-              Karura Forest Boundary
-            </button>
-          ) : null}
+          <div className="mt-1.5 space-y-1.5">
+            <LocationButton map={mapInstance} />
+            {siteSettings.enablePlaceSuggestions ? (
+              <button
+                type="button"
+                onClick={() => setSuggestOpen(true)}
+                className="block min-h-9 rounded bg-[var(--donate-amber)] px-3 py-1.5 text-xs font-semibold text-white shadow"
+              >
+                Suggest Place
+              </button>
+            ) : null}
+            {mapConfig.showBoundary ? (
+              <button
+                type="button"
+                onClick={() => setBoundaryInfoOpen(true)}
+                className="block min-h-9 max-w-[10.5rem] rounded border border-[var(--forest-header)] bg-[var(--card-bg)] px-3 py-1.5 text-left text-xs font-semibold leading-snug text-[var(--forest-header)] shadow"
+              >
+                Karura Forest Boundary
+              </button>
+            ) : null}
+          </div>
           {choosingSuggestionLocation ? (
-            <p className="max-w-[15rem] rounded bg-[var(--sand-yellow)] px-2 py-1 text-[10px] leading-snug text-[var(--brown-olive)] shadow">
+            <p className="mt-1.5 max-w-[10.5rem] rounded bg-[var(--sand-yellow)] px-2 py-1 text-[10px] leading-snug text-[var(--brown-olive)] shadow">
               Tap or click the map to choose the location.
             </p>
           ) : null}
