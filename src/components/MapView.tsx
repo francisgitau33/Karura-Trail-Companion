@@ -1,8 +1,9 @@
 "use client";
 
 import React, { useEffect, useRef, useState } from 'react';
-import type { Map } from 'maplibre-gl';
+import type { Map, Marker } from 'maplibre-gl';
 import { mapConfig } from "../data/mapConfig";
+import type { PublicPlaceSuggestion } from "../lib/placeSuggestions";
 import type { SiteSettings } from "../lib/siteSettings";
 import Header from "./Header";
 import PrototypeBanner from "./PrototypeBanner";
@@ -12,6 +13,7 @@ import AboutModal from "./AboutModal";
 import DonateModal from "./DonateModal";
 import NatureAnimations from "./NatureAnimations";
 import SafetyModal from "./SafetyModal";
+import SuggestPlaceModal from "./SuggestPlaceModal";
 import TrailInfoPanel, { TrailProperties } from "./TrailInfoPanel";
 
 // Define available categories for filters.
@@ -28,11 +30,23 @@ const MAP_STYLE_URL = 'https://basemaps.cartocdn.com/gl/positron-gl-style/style.
  * Primary map view component. Handles map setup, data loading, user interactions,
  * modals and filters. This component runs only on the client.
  */
-export default function MapView({ siteSettings }: { siteSettings: SiteSettings }) {
+export default function MapView({
+  siteSettings,
+  approvedPlaceSuggestions,
+}: {
+  siteSettings: SiteSettings;
+  approvedPlaceSuggestions: PublicPlaceSuggestion[];
+}) {
   // Modal state
   const [aboutOpen, setAboutOpen] = useState(false);
   const [donateOpen, setDonateOpen] = useState(false);
   const [safetyOpen, setSafetyOpen] = useState(false);
+  const [suggestOpen, setSuggestOpen] = useState(false);
+  const [choosingSuggestionLocation, setChoosingSuggestionLocation] = useState(false);
+  const [suggestionCoordinates, setSuggestionCoordinates] = useState<{
+    latitude: number;
+    longitude: number;
+  } | null>(null);
   // Selected trail details
   const [selectedTrail, setSelectedTrail] = useState<TrailProperties | null>(null);
   // Selected filter category
@@ -42,9 +56,38 @@ export default function MapView({ siteSettings }: { siteSettings: SiteSettings }
   const mapContainerRef = useRef<HTMLDivElement | null>(null);
   const mapRef = useRef<Map | null>(null);
   const [mapInstance, setMapInstance] = useState<Map | null>(null);
+  const suggestionModeRef = useRef(false);
+  const suggestionMarkerRef = useRef<Marker | null>(null);
   // Keep track of loaded data to avoid re-fetching
   const dataLoadedRef = useRef(false);
   const interactionsBoundRef = useRef(false);
+
+  useEffect(() => {
+    suggestionModeRef.current = choosingSuggestionLocation;
+  }, [choosingSuggestionLocation]);
+
+  useEffect(() => {
+    if (!mapInstance || !suggestionCoordinates) return;
+
+    let cancelled = false;
+    const updateMarker = async () => {
+      const maplibreModule = await import('maplibre-gl');
+      if (cancelled) return;
+      const maplibre = maplibreModule.default ?? maplibreModule;
+      suggestionMarkerRef.current?.remove();
+      suggestionMarkerRef.current = new maplibre.Marker({ color: '#D89B45' })
+        .setLngLat([suggestionCoordinates.longitude, suggestionCoordinates.latitude])
+        .addTo(mapInstance);
+    };
+
+    updateMarker().catch((error) => {
+      console.error('Error adding suggestion marker:', error);
+    });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [mapInstance, suggestionCoordinates]);
 
   useEffect(() => {
     // Initialize the map only once
@@ -190,6 +233,44 @@ export default function MapView({ siteSettings }: { siteSettings: SiteSettings }
                 'circle-stroke-color': '#FFFFFF',
               },
             });
+            map.addSource('approved-place-suggestions', {
+              type: 'geojson',
+              data: {
+                type: 'FeatureCollection',
+                features: approvedPlaceSuggestions.map((suggestion) => ({
+                  type: 'Feature',
+                  geometry: {
+                    type: 'Point',
+                    coordinates: [suggestion.longitude, suggestion.latitude],
+                  },
+                  properties: {
+                    id: suggestion.id,
+                    type: suggestion.type,
+                    category: suggestion.type === 'facility' ? 'Facilities' : 'Landmark',
+                    name: suggestion.name,
+                    description: suggestion.description,
+                    status: 'Approved community suggestion',
+                  },
+                })),
+              } as any,
+            });
+            map.addLayer({
+              id: 'approved-suggestions-circle',
+              type: 'circle',
+              source: 'approved-place-suggestions',
+              paint: {
+                'circle-radius': 7,
+                'circle-color': [
+                  'match',
+                  ['get', 'type'],
+                  'facility',
+                  '#9A6B3F',
+                  '#0077A7',
+                ],
+                'circle-stroke-width': 2,
+                'circle-stroke-color': '#FFFFFF',
+              },
+            });
             map.addSource('gates', {
               type: 'geojson',
               data: gatesData,
@@ -270,7 +351,7 @@ export default function MapView({ siteSettings }: { siteSettings: SiteSettings }
                 if (!feature) return;
                 const coords = feature.geometry.coordinates.slice();
                 const props = feature.properties as any;
-                const html = `<strong>${props.name}</strong><br />Category: ${props.category}<br />${props.description}<br /><em>${props.visitor_note}</em><br /><small>${props.status}</small>`;
+                const html = `<strong>${props.name}</strong><br />Category: ${props.category}<br />${props.description}<br /><small>${props.status}</small>`;
                 new maplibre.Popup()
                   .setLngLat(coords)
                   .setHTML(html)
@@ -279,6 +360,11 @@ export default function MapView({ siteSettings }: { siteSettings: SiteSettings }
 
               map.on('click', 'pois-circle', (e: any) => {
                 if (!map.getLayer('pois-circle')) return;
+                showPoiPopup(e);
+              });
+
+              map.on('click', 'approved-suggestions-circle', (e: any) => {
+                if (!map.getLayer('approved-suggestions-circle')) return;
                 showPoiPopup(e);
               });
 
@@ -325,6 +411,7 @@ export default function MapView({ siteSettings }: { siteSettings: SiteSettings }
               [
                 'trails-line',
                 'pois-circle',
+                'approved-suggestions-circle',
                 'gates-circle',
                 'gates-label',
                 ...(mapConfig.showBoundary ? ['karura-boundary-fill'] : []),
@@ -344,6 +431,16 @@ export default function MapView({ siteSettings }: { siteSettings: SiteSettings }
         });
 
         map.on('click', (e: any) => {
+          if (suggestionModeRef.current) {
+            setSuggestionCoordinates({
+              latitude: e.lngLat.lat,
+              longitude: e.lngLat.lng,
+            });
+            setChoosingSuggestionLocation(false);
+            setSuggestOpen(true);
+            return;
+          }
+
           if (!map.getLayer('trails-line')) {
             return;
           }
@@ -372,6 +469,8 @@ export default function MapView({ siteSettings }: { siteSettings: SiteSettings }
       cancelled = true;
       window.removeEventListener('resize', resizeMap);
       window.clearTimeout(resizeTimeout);
+      suggestionMarkerRef.current?.remove();
+      suggestionMarkerRef.current = null;
       if (mapRef.current) {
         mapRef.current.remove();
         mapRef.current = null;
@@ -385,11 +484,17 @@ export default function MapView({ siteSettings }: { siteSettings: SiteSettings }
   useEffect(() => {
     const map = mapRef.current;
     if (!map || !dataLoadedRef.current) return;
-    if (!map.getLayer('trails-line') || !map.getLayer('pois-circle') || !map.getLayer('gates-circle')) return;
+    if (
+      !map.getLayer('trails-line') ||
+      !map.getLayer('pois-circle') ||
+      !map.getLayer('approved-suggestions-circle') ||
+      !map.getLayer('gates-circle')
+    ) return;
     // Reset filters
     try {
       map.setFilter('trails-line', null);
       map.setFilter('pois-circle', ['!=', ['get', 'category'], 'Gate']);
+      map.setFilter('approved-suggestions-circle', null);
       map.setFilter('gates-circle', null);
       if (map.getLayer('gates-label')) {
         map.setFilter('gates-label', null);
@@ -429,6 +534,12 @@ export default function MapView({ siteSettings }: { siteSettings: SiteSettings }
         ? ['in', ['get', 'category'], ['literal', poiCategories]]
         : ['==', ['get', 'category'], '__hidden__']) as any,
     );
+    map.setFilter(
+      'approved-suggestions-circle',
+      (poiCategories.length
+        ? ['in', ['get', 'category'], ['literal', poiCategories]]
+        : ['==', ['get', 'category'], '__hidden__']) as any,
+    );
     map.setFilter('gates-circle', showGates ? null : (['==', ['get', 'category'], '__hidden__'] as any));
     if (map.getLayer('gates-label')) {
       map.setFilter('gates-label', showGates ? null : (['==', ['get', 'category'], '__hidden__'] as any));
@@ -458,6 +569,20 @@ export default function MapView({ siteSettings }: { siteSettings: SiteSettings }
             onSelect={(cat) => setSelectedCategory(cat === selectedCategory ? 'All' : cat)}
           />
           <LocationButton map={mapInstance} />
+          {siteSettings.enablePlaceSuggestions ? (
+            <button
+              type="button"
+              onClick={() => setSuggestOpen(true)}
+              className="min-h-10 rounded bg-[var(--donate-amber)] px-3 py-2 text-xs font-semibold text-white shadow"
+            >
+              Suggest Place
+            </button>
+          ) : null}
+          {choosingSuggestionLocation ? (
+            <p className="max-w-[15rem] rounded bg-[var(--sand-yellow)] px-2 py-1 text-[10px] leading-snug text-[var(--brown-olive)] shadow">
+              Tap the map to place your suggestion pin.
+            </p>
+          ) : null}
         </div>
         <NatureAnimations />
         {/* Trail information panel */}
@@ -472,6 +597,27 @@ export default function MapView({ siteSettings }: { siteSettings: SiteSettings }
       />
       <DonateModal open={donateOpen} settings={siteSettings} onClose={() => setDonateOpen(false)} />
       <SafetyModal open={safetyOpen} settings={siteSettings} onClose={() => setSafetyOpen(false)} />
+      <SuggestPlaceModal
+        open={suggestOpen}
+        coordinates={suggestionCoordinates}
+        onClose={() => {
+          setSuggestOpen(false);
+          setChoosingSuggestionLocation(false);
+          suggestionMarkerRef.current?.remove();
+          suggestionMarkerRef.current = null;
+          setSuggestionCoordinates(null);
+        }}
+        onStartChoosingLocation={() => {
+          setChoosingSuggestionLocation(true);
+          setSuggestOpen(false);
+        }}
+        onSubmitted={() => {
+          suggestionMarkerRef.current?.remove();
+          suggestionMarkerRef.current = null;
+          setSuggestionCoordinates(null);
+          setChoosingSuggestionLocation(false);
+        }}
+      />
     </div>
   );
 }
