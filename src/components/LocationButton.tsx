@@ -48,7 +48,7 @@ export default function LocationButton({ map }: LocationButtonProps) {
     <button
       onClick={handleClick}
       disabled={loading}
-      className="bg-[var(--trail-green)] text-white py-1 px-2 rounded shadow text-xs hover:bg-[var(--trail-green-hover)] focus:outline-none disabled:opacity-50"
+      className="min-h-10 bg-[var(--trail-green)] text-white px-3 py-2 rounded shadow text-xs hover:bg-[var(--trail-green-hover)] focus:outline-none disabled:opacity-50"
       aria-label="Show my location"
     >
       {loading ? 'Locating...' : 'Show My Location'}
