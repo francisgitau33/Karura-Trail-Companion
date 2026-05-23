@@ -234,10 +234,11 @@ export default async function AdminPage({
           </Section>
 
           <Section title="Footer / Contact">
-            <Field label="Contact email" name="contactEmail" value={settings.contactEmail} type="email" />
-            <Field label="LinkedIn URL" name="linkedinUrl" value={settings.linkedinUrl} type="url" />
-            <Field label="Medium URL" name="mediumUrl" value={settings.mediumUrl} type="url" />
+            <Field label="Footer contact email" name="contactEmail" value={settings.contactEmail} type="email" />
           </Section>
+
+          <input type="hidden" name="linkedinUrl" value={settings.linkedinUrl} />
+          <input type="hidden" name="mediumUrl" value={settings.mediumUrl} />
 
           <button
             type="submit"
