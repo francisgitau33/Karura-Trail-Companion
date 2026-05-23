@@ -41,6 +41,7 @@ export default function MapView({ siteSettings }: { siteSettings: SiteSettings }
   // Map container and map instance refs
   const mapContainerRef = useRef<HTMLDivElement | null>(null);
   const mapRef = useRef<Map | null>(null);
+  const [mapInstance, setMapInstance] = useState<Map | null>(null);
   // Keep track of loaded data to avoid re-fetching
   const dataLoadedRef = useRef(false);
   const interactionsBoundRef = useRef(false);
@@ -81,6 +82,7 @@ export default function MapView({ siteSettings }: { siteSettings: SiteSettings }
           "top-right",
         );
         mapRef.current = map;
+        setMapInstance(map);
 
         map.on('error', (event: any) => {
           console.error('MapLibre runtime error:', event.error);
@@ -455,7 +457,7 @@ export default function MapView({ siteSettings }: { siteSettings: SiteSettings }
             selected={selectedCategory}
             onSelect={(cat) => setSelectedCategory(cat === selectedCategory ? 'All' : cat)}
           />
-          <LocationButton map={mapRef.current} />
+          <LocationButton map={mapInstance} />
         </div>
         <NatureAnimations />
         {/* Trail information panel */}
