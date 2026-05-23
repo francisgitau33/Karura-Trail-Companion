@@ -22,7 +22,7 @@ export default function FilterControls({ categories, selected, onSelect }: Filte
               key={cat}
               onClick={() => onSelect(cat)}
               aria-pressed={isSelected}
-              className={`min-h-10 whitespace-nowrap rounded px-3 py-2 focus:outline-none ${
+              className={`min-h-10 whitespace-nowrap rounded px-3 py-2 transition-colors focus:outline-none ${
                 isSelected
                   ? 'bg-[var(--leaf-green)] text-white'
                   : 'bg-[var(--soft-stone)] text-[var(--charcoal-green)] hover:bg-[var(--sage-border)]'
