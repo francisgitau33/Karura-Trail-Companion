@@ -18,9 +18,12 @@ function text(formData: FormData, key: keyof SiteSettings) {
   return String(formData.get(key) ?? '').trim();
 }
 
-async function readLogoUpload(formData: FormData) {
+async function readLogoUpload(formData: FormData, requireFile = false) {
   const file = formData.get('officialLogoFile');
   if (!(file instanceof File) || file.size === 0) {
+    if (requireFile) {
+      return { logo: null, error: 'Choose a logo image before clicking Upload logo.' };
+    }
     return { logo: null, error: null };
   }
 
@@ -47,6 +50,8 @@ async function readLogoUpload(formData: FormData) {
 
 export async function saveSettingsAction(formData: FormData) {
   const session = await requirePlatformOwner();
+  const intent = formData.get('intent');
+  const isLogoUpload = intent === 'upload-logo';
   const settings: SiteSettings = {
     appName: text(formData, 'appName'),
     tagline: text(formData, 'tagline'),
@@ -78,7 +83,7 @@ export async function saveSettingsAction(formData: FormData) {
     redirect(`/admin?error=${encodeURIComponent(validationError)}`);
   }
 
-  const { logo, error: logoError } = await readLogoUpload(formData);
+  const { logo, error: logoError } = await readLogoUpload(formData, isLogoUpload);
   if (logoError) {
     redirect(`/admin?error=${encodeURIComponent(logoError)}`);
   }
@@ -98,10 +103,17 @@ export async function saveSettingsAction(formData: FormData) {
     });
   } catch (error) {
     console.error('CMS settings save failed.', error);
+    const message = error instanceof Error ? error.message : '';
+    if (message.includes('Official logo upload columns are missing')) {
+      redirect('/admin?error=Logo%20upload%20setup%20is%20not%20complete.%20Run%20migration%20003_site_settings_logo_upload.sql.');
+    }
     redirect('/admin?error=CMS%20database%20is%20not%20ready.%20Check%20Neon%20setup%20and%20migration.');
   }
 
   revalidatePath('/');
   revalidatePath('/admin');
+  if (logo) {
+    redirect('/admin?logoSaved=1');
+  }
   redirect('/admin?saved=1');
 }
