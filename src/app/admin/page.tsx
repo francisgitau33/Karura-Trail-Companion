@@ -92,9 +92,9 @@ export default async function AdminPage({
               Signed in as {session.email} - PLATFORM_OWNER
             </p>
           </div>
-          <Link className="rounded bg-[var(--soft-stone)] px-4 py-2 text-sm" href="/admin/logout">
+          <a className="rounded bg-[var(--soft-stone)] px-4 py-2 text-sm" href="/admin/logout">
             Logout
-          </Link>
+          </a>
         </header>
 
         {params?.saved ? (
