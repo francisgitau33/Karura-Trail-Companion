@@ -247,6 +247,7 @@ export default function MapView({
                     id: suggestion.id,
                     type: suggestion.type,
                     category: suggestion.type === 'facility' ? 'Facilities' : 'Landmark',
+                    popupCategory: suggestion.type === 'facility' ? 'Facility' : 'Landmark',
                     name: suggestion.name,
                     description: suggestion.description,
                     status: 'Approved community suggestion',
@@ -351,7 +352,8 @@ export default function MapView({
                 if (!feature) return;
                 const coords = feature.geometry.coordinates.slice();
                 const props = feature.properties as any;
-                const html = `<strong>${props.name}</strong><br />Category: ${props.category}<br />${props.description}<br /><small>${props.status}</small>`;
+                const category = props.popupCategory || props.category;
+                const html = `<strong>${props.name}</strong><br />Category: ${category}<br />${props.description}<br /><small>${props.status}</small>`;
                 new maplibre.Popup()
                   .setLngLat(coords)
                   .setHTML(html)
@@ -580,7 +582,7 @@ export default function MapView({
           ) : null}
           {choosingSuggestionLocation ? (
             <p className="max-w-[15rem] rounded bg-[var(--sand-yellow)] px-2 py-1 text-[10px] leading-snug text-[var(--brown-olive)] shadow">
-              Tap the map to place your suggestion pin.
+              Tap or click the map to choose the location.
             </p>
           ) : null}
         </div>
