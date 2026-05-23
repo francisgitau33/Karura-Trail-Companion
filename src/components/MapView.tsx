@@ -542,6 +542,7 @@ export default function MapView({
         onAbout={() => setAboutOpen(true)}
         onDonate={() => setDonateOpen(true)}
         onSafety={() => setSafetyOpen(true)}
+        onBoundary={mapConfig.showBoundary ? () => setBoundaryInfoOpen(true) : undefined}
       />
       <main className="map-shell relative flex-1 min-h-[600px]">
         <div ref={mapContainerRef} className="absolute inset-0" />
@@ -566,15 +567,6 @@ export default function MapView({
                 className="block min-h-9 rounded bg-[var(--donate-amber)] px-3 py-1.5 text-xs font-semibold text-white shadow"
               >
                 Suggest Place
-              </button>
-            ) : null}
-            {mapConfig.showBoundary ? (
-              <button
-                type="button"
-                onClick={() => setBoundaryInfoOpen(true)}
-                className="block min-h-9 max-w-[10.5rem] rounded border border-[var(--forest-header)] bg-[var(--card-bg)] px-3 py-1.5 text-left text-xs font-semibold leading-snug text-[var(--forest-header)] shadow"
-              >
-                Karura Forest Boundary
               </button>
             ) : null}
           </div>
