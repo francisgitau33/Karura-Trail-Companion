@@ -56,3 +56,50 @@ body {
     transform: translateY(-50%);
   }
 }
+
+.nature-character {
+  filter: drop-shadow(0 8px 16px rgb(31 45 39 / 0.16));
+  opacity: 0.9;
+}
+
+.nature-character-walker {
+  animation: nature-float 5.5s ease-in-out infinite;
+}
+
+.nature-character-monkey {
+  animation: nature-sway 6s ease-in-out infinite;
+}
+
+@keyframes nature-float {
+  0%,
+  100% {
+    transform: translateY(0) rotate(-1deg);
+  }
+
+  50% {
+    transform: translateY(-6px) rotate(1deg);
+  }
+}
+
+@keyframes nature-sway {
+  0%,
+  100% {
+    transform: translateY(0) rotate(1deg);
+  }
+
+  50% {
+    transform: translateY(-4px) rotate(-2deg);
+  }
+}
+
+@media (max-width: 767px), (orientation: landscape) and (max-height: 500px) {
+  .nature-character {
+    display: none;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .nature-character {
+    animation: none;
+  }
+}
