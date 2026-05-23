@@ -13,24 +13,26 @@ interface FilterControlsProps {
  */
 export default function FilterControls({ categories, selected, onSelect }: FilterControlsProps) {
   return (
-    <div className="bg-[var(--card-bg)] border border-[var(--sage-border)] p-2 rounded shadow flex flex-wrap gap-2 text-xs">
-      {categories.map((cat) => {
-        const isSelected = cat === selected;
-        return (
-          <button
-            key={cat}
-            onClick={() => onSelect(cat)}
-            aria-pressed={isSelected}
-            className={`px-2 py-1 rounded focus:outline-none ${
-              isSelected
-                ? 'bg-[var(--leaf-green)] text-white'
-                : 'bg-[var(--soft-stone)] text-[var(--charcoal-green)] hover:bg-[var(--sage-border)]'
-            }`}
-          >
-            {cat}
-          </button>
-        );
-      })}
+    <div className="max-w-[calc(100vw-1rem)] overflow-x-auto rounded border border-[var(--sage-border)] bg-[var(--card-bg)] p-2 text-xs shadow">
+      <div className="flex flex-nowrap gap-2">
+        {categories.map((cat) => {
+          const isSelected = cat === selected;
+          return (
+            <button
+              key={cat}
+              onClick={() => onSelect(cat)}
+              aria-pressed={isSelected}
+              className={`min-h-10 whitespace-nowrap rounded px-3 py-2 focus:outline-none ${
+                isSelected
+                  ? 'bg-[var(--leaf-green)] text-white'
+                  : 'bg-[var(--soft-stone)] text-[var(--charcoal-green)] hover:bg-[var(--sage-border)]'
+              }`}
+            >
+              {cat}
+            </button>
+          );
+        })}
+      </div>
     </div>
   );
 }
