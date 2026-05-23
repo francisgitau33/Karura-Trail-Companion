@@ -34,7 +34,7 @@ export default function SafetyModal({ open, settings, onClose }: SafetyModalProp
       aria-labelledby="safetyModalTitle"
       aria-modal="true"
     >
-      <div className="bg-[var(--card-bg)] text-[var(--main-text)] border border-[var(--sage-border)] p-6 max-w-md rounded shadow overflow-y-auto max-h-[90vh]">
+      <div className="max-h-[90vh] w-[calc(100vw-2rem)] max-w-md overflow-y-auto rounded border border-[var(--sage-border)] bg-[var(--card-bg)] p-5 text-[var(--main-text)] shadow sm:p-6">
         <h2 id="safetyModalTitle" className="text-xl font-semibold mb-2 text-[var(--safety-red)]">
           {settings.safetyTitle}
         </h2>
