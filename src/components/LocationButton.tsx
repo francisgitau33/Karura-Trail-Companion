@@ -105,12 +105,12 @@ export default function LocationButton({ map }: LocationButtonProps) {
   };
 
   return (
-    <div className="max-w-[15rem] space-y-1">
+    <div className="max-w-[10.5rem] space-y-1">
       <button
         onClick={handleClick}
         disabled={loading || !map}
         aria-pressed={enabled}
-        className="min-h-10 rounded bg-[var(--trail-green)] px-3 py-2 text-xs text-white shadow transition-colors hover:bg-[var(--trail-green-hover)] focus:outline-none disabled:opacity-50"
+        className="min-h-9 rounded bg-[var(--trail-green)] px-3 py-1.5 text-xs font-semibold text-white shadow transition-colors hover:bg-[var(--trail-green-hover)] focus:outline-none disabled:opacity-50"
         aria-label={enabled ? 'Hide my location' : 'Show my location'}
       >
         {loading ? 'Locating...' : enabled ? 'Hide My Location' : map ? 'Show My Location' : 'Map Loading...'}
@@ -120,7 +120,7 @@ export default function LocationButton({ map }: LocationButtonProps) {
           {message}
         </p>
       ) : null}
-      <p className="rounded bg-[var(--card-bg)]/90 px-2 py-1 text-[10px] leading-snug text-[var(--charcoal-green)] shadow">
+      <p className="rounded bg-white/70 px-2 py-1 text-[10px] leading-snug text-[var(--charcoal-green)]">
         Location is used only in your browser and is not stored.
       </p>
     </div>
