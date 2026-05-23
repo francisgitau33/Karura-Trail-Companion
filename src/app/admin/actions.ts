@@ -20,6 +20,7 @@ export async function saveSettingsAction(formData: FormData) {
     aboutTitle: text(formData, 'aboutTitle'),
     aboutBody: text(formData, 'aboutBody'),
     aboutCallToActionText: text(formData, 'aboutCallToActionText'),
+    officialLogoUrl: text(formData, 'officialLogoUrl'),
     donateTitle: text(formData, 'donateTitle'),
     donateBody: text(formData, 'donateBody'),
     mpesaPaybill: text(formData, 'mpesaPaybill'),
