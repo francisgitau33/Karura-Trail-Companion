@@ -417,17 +417,19 @@ export default function MapView({ siteSettings }: { siteSettings: SiteSettings }
 
     map.setFilter(
       'trails-line',
-      trailTypes.length ? ['in', ['get', 'type'], ['literal', trailTypes]] : ['==', ['get', 'type'], '__hidden__'],
+      (trailTypes.length
+        ? ['in', ['get', 'type'], ['literal', trailTypes]]
+        : ['==', ['get', 'type'], '__hidden__']) as any,
     );
     map.setFilter(
       'pois-circle',
-      poiCategories.length
+      (poiCategories.length
         ? ['in', ['get', 'category'], ['literal', poiCategories]]
-        : ['==', ['get', 'category'], '__hidden__'],
+        : ['==', ['get', 'category'], '__hidden__']) as any,
     );
-    map.setFilter('gates-circle', showGates ? null : ['==', ['get', 'category'], '__hidden__']);
+    map.setFilter('gates-circle', showGates ? null : (['==', ['get', 'category'], '__hidden__'] as any));
     if (map.getLayer('gates-label')) {
-      map.setFilter('gates-label', showGates ? null : ['==', ['get', 'category'], '__hidden__']);
+      map.setFilter('gates-label', showGates ? null : (['==', ['get', 'category'], '__hidden__'] as any));
     }
   }, [selectedCategory]);
 
