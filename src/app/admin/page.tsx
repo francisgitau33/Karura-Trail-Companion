@@ -110,6 +110,7 @@ export default async function AdminPage({
 
         <form
           action={saveSettingsAction}
+          encType="multipart/form-data"
           className="space-y-8 rounded border border-[var(--sage-border)] bg-[var(--card-bg)] p-6 shadow"
         >
           <Section title="General">
@@ -137,12 +138,36 @@ export default async function AdminPage({
               name="aboutCallToActionText"
               value={settings.aboutCallToActionText}
             />
-            <Field
-              label="Official logo URL"
-              name="officialLogoUrl"
-              value={settings.officialLogoUrl}
-              type="url"
-            />
+            <div className="md:col-span-2">
+              <label className="block text-sm">
+                <span className="font-medium">Official KCH Logo</span>
+                <span className="mt-1 block text-xs text-[var(--charcoal-green)]">
+                  Upload the logo displayed in the About and Donate popups. PNG, JPG, JPEG, or WebP only. Maximum 1 MB.
+                </span>
+                {settings.officialLogoSrc ? (
+                  <div className="mt-3 rounded border border-[var(--sage-border)] bg-white p-3">
+                    <img
+                      src={settings.officialLogoSrc}
+                      alt="Current Kenya Children's Home logo"
+                      className="max-h-20 w-auto max-w-[160px] object-contain"
+                    />
+                    {settings.officialLogoFilename ? (
+                      <p className="mt-2 text-xs text-[var(--charcoal-green)]">{settings.officialLogoFilename}</p>
+                    ) : null}
+                  </div>
+                ) : (
+                  <p className="mt-3 rounded border border-[var(--sage-border)] bg-white px-3 py-2 text-sm text-[var(--charcoal-green)]">
+                    No official logo uploaded yet.
+                  </p>
+                )}
+                <input
+                  name="officialLogoFile"
+                  type="file"
+                  accept=".png,.jpg,.jpeg,.webp,image/png,image/jpeg,image/webp"
+                  className="mt-3 block w-full text-sm"
+                />
+              </label>
+            </div>
             <div className="md:col-span-2">
               <TextArea label="About body" name="aboutBody" value={settings.aboutBody} />
             </div>
