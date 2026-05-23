@@ -10,20 +10,16 @@ import FilterControls from "./FilterControls";
 import LocationButton from "./LocationButton";
 import AboutModal from "./AboutModal";
 import DonateModal from "./DonateModal";
+import NatureAnimations from "./NatureAnimations";
 import SafetyModal from "./SafetyModal";
 import TrailInfoPanel, { TrailProperties } from "./TrailInfoPanel";
 
 // Define available categories for filters.
 const CATEGORY_LIST = [
-  'All',
-  'Walking',
-  'Running',
+  'Walk & Jog',
   'Cycling',
-  'Family',
-  'Landmarks',
-  'Facilities',
-  'Safety',
-  'Gates',
+  'Family & Facilities',
+  'Landmarks & Gates',
 ];
 
 const MAP_STYLE_URL = 'https://basemaps.cartocdn.com/gl/positron-gl-style/style.json';
@@ -403,29 +399,35 @@ export default function MapView({ siteSettings }: { siteSettings: SiteSettings }
     if (selectedCategory === 'All') {
       return;
     }
-    // Mapping of UI categories to POI category field values
-    const categoryMap: Record<string, string> = {
-      Landmarks: 'Landmark',
-      Facilities: 'Facilities',
-      Gates: 'Gate',
-      Safety: 'Safety',
+
+    const trailTypeFilters: Record<string, string[]> = {
+      'Walk & Jog': ['Walking', 'Running', 'Walking / Nature', 'Walking / Running'],
+      Cycling: ['Cycling'],
+      'Family & Facilities': ['Family'],
     };
-    const mapped = categoryMap[selectedCategory];
-    if (mapped === 'Gate') {
-      map.setFilter('pois-circle', ['==', ['get', 'category'], '__hidden__']);
-      map.setFilter('gates-circle', null);
-      if (map.getLayer('gates-label')) {
-        map.setFilter('gates-label', null);
-      }
-    } else if (mapped) {
-      map.setFilter('pois-circle', ['==', ['get', 'category'], mapped]);
-      map.setFilter('gates-circle', ['==', ['get', 'category'], '__hidden__']);
-      if (map.getLayer('gates-label')) {
-        map.setFilter('gates-label', ['==', ['get', 'category'], '__hidden__']);
-      }
-    } else {
-      // For Walking, Running, Cycling, Family: we could filter trail types if implemented.
-      // Future implementation can filter trails by type or difficulty.
+
+    const poiCategoryFilters: Record<string, string[]> = {
+      'Family & Facilities': ['Facilities'],
+      'Landmarks & Gates': ['Landmark'],
+    };
+
+    const trailTypes = trailTypeFilters[selectedCategory] ?? [];
+    const poiCategories = poiCategoryFilters[selectedCategory] ?? [];
+    const showGates = selectedCategory === 'Landmarks & Gates';
+
+    map.setFilter(
+      'trails-line',
+      trailTypes.length ? ['in', ['get', 'type'], ['literal', trailTypes]] : ['==', ['get', 'type'], '__hidden__'],
+    );
+    map.setFilter(
+      'pois-circle',
+      poiCategories.length
+        ? ['in', ['get', 'category'], ['literal', poiCategories]]
+        : ['==', ['get', 'category'], '__hidden__'],
+    );
+    map.setFilter('gates-circle', showGates ? null : ['==', ['get', 'category'], '__hidden__']);
+    if (map.getLayer('gates-label')) {
+      map.setFilter('gates-label', showGates ? null : ['==', ['get', 'category'], '__hidden__']);
     }
   }, [selectedCategory]);
 
@@ -449,10 +451,11 @@ export default function MapView({ siteSettings }: { siteSettings: SiteSettings }
           <FilterControls
             categories={CATEGORY_LIST}
             selected={selectedCategory}
-            onSelect={(cat) => setSelectedCategory(cat)}
+            onSelect={(cat) => setSelectedCategory(cat === selectedCategory ? 'All' : cat)}
           />
           <LocationButton map={mapRef.current} />
         </div>
+        <NatureAnimations />
         {/* Trail information panel */}
         <TrailInfoPanel trail={selectedTrail} onClose={() => setSelectedTrail(null)} />
       </main>
