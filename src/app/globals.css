@@ -61,8 +61,8 @@ body {
 
   .map-shell {
     flex: 0 0 auto;
-    height: calc(100dvh - 80px);
-    min-height: 620px;
+    height: clamp(560px, 78dvh, 700px);
+    min-height: 0;
   }
 
   .map-shell .maplibregl-ctrl-top-right {
