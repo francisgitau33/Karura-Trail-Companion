@@ -1,9 +1,10 @@
 import Link from 'next/link';
 import type { ReactNode } from 'react';
-import { saveSettingsAction } from './actions';
+import { reviewPlaceSuggestionAction, saveSettingsAction } from './actions';
 import { getRecentAuditEvents } from '../../lib/audit';
 import { getCmsSetupStatus, requirePlatformOwner } from '../../lib/auth';
 import { getSiteSettings, SiteSettings } from '../../lib/siteSettings';
+import { getPlaceSuggestionsForAdmin, PlaceSuggestion } from '../../lib/placeSuggestions';
 
 export const dynamic = 'force-dynamic';
 
@@ -54,6 +55,135 @@ function Section({ title, children }: { title: string; children: ReactNode }) {
   );
 }
 
+function AdminPlaceSuggestions({ suggestions }: { suggestions: PlaceSuggestion[] }) {
+  return (
+    <section className="rounded border border-[var(--sage-border)] bg-[var(--card-bg)] p-6 shadow">
+      <h2 className="mb-4 text-lg font-semibold">Landmark / Facility Suggestions</h2>
+      {suggestions.length ? (
+        <div className="space-y-4">
+          {suggestions.map((suggestion) => (
+            <form
+              key={suggestion.id}
+              action={reviewPlaceSuggestionAction}
+              className="space-y-3 rounded border border-[var(--sage-border)] bg-white p-4 text-sm"
+            >
+              <input type="hidden" name="id" value={suggestion.id} />
+              <div className="flex flex-wrap items-center justify-between gap-2">
+                <div>
+                  <p className="font-semibold">{suggestion.name}</p>
+                  <p className="text-xs uppercase tracking-wide text-[var(--charcoal-green)]">
+                    {suggestion.status} - {new Date(suggestion.createdAt).toLocaleString()}
+                  </p>
+                </div>
+                {suggestion.nearbyCount > 0 ? (
+                  <span className="rounded bg-[var(--sand-yellow)] px-2 py-1 text-xs text-[var(--brown-olive)]">
+                    Nearby possible duplicate
+                  </span>
+                ) : null}
+              </div>
+              <div className="grid gap-3 md:grid-cols-2">
+                <label className="block">
+                  <span className="font-medium">Type</span>
+                  <select
+                    name="type"
+                    defaultValue={suggestion.type}
+                    className="mt-1 w-full rounded border border-[var(--sage-border)] px-3 py-2"
+                  >
+                    <option value="landmark">Landmark</option>
+                    <option value="facility">Facility</option>
+                  </select>
+                </label>
+                <label className="block">
+                  <span className="font-medium">Name</span>
+                  <input
+                    name="name"
+                    defaultValue={suggestion.name}
+                    maxLength={80}
+                    className="mt-1 w-full rounded border border-[var(--sage-border)] px-3 py-2"
+                  />
+                </label>
+                <label className="block">
+                  <span className="font-medium">Latitude</span>
+                  <input
+                    name="latitude"
+                    defaultValue={suggestion.latitude}
+                    type="number"
+                    step="0.000001"
+                    className="mt-1 w-full rounded border border-[var(--sage-border)] px-3 py-2"
+                  />
+                </label>
+                <label className="block">
+                  <span className="font-medium">Longitude</span>
+                  <input
+                    name="longitude"
+                    defaultValue={suggestion.longitude}
+                    type="number"
+                    step="0.000001"
+                    className="mt-1 w-full rounded border border-[var(--sage-border)] px-3 py-2"
+                  />
+                </label>
+              </div>
+              <label className="block">
+                <span className="font-medium">Description</span>
+                <textarea
+                  name="description"
+                  defaultValue={suggestion.description}
+                  maxLength={500}
+                  rows={3}
+                  className="mt-1 w-full rounded border border-[var(--sage-border)] px-3 py-2"
+                />
+              </label>
+              {suggestion.contactEmail ? (
+                <p className="text-xs text-[var(--charcoal-green)]">
+                  Optional contact: {suggestion.contactEmail}
+                </p>
+              ) : null}
+              <label className="block">
+                <span className="font-medium">Admin notes</span>
+                <textarea
+                  name="adminNotes"
+                  defaultValue={suggestion.adminNotes}
+                  maxLength={500}
+                  rows={2}
+                  className="mt-1 w-full rounded border border-[var(--sage-border)] px-3 py-2"
+                />
+              </label>
+              <div className="flex flex-wrap gap-2">
+                <button
+                  type="submit"
+                  name="reviewAction"
+                  value="approve"
+                  className="rounded bg-[var(--trail-green)] px-3 py-2 text-xs font-semibold text-white"
+                >
+                  Approve
+                </button>
+                <button
+                  type="submit"
+                  name="reviewAction"
+                  value="reject"
+                  className="rounded bg-[var(--safety-red)] px-3 py-2 text-xs font-semibold text-white"
+                >
+                  Reject
+                </button>
+                <button
+                  type="submit"
+                  name="reviewAction"
+                  value="merge"
+                  className="rounded bg-[var(--soft-stone)] px-3 py-2 text-xs font-semibold text-[var(--charcoal-green)]"
+                >
+                  Mark duplicate
+                </button>
+              </div>
+            </form>
+          ))}
+        </div>
+      ) : (
+        <p className="text-sm">No landmark or facility suggestions yet.</p>
+      )}
+    </section>
+  );
+}
+
 export default async function AdminPage({
   searchParams,
 }: {
@@ -80,7 +210,11 @@ export default async function AdminPage({
 
   const session = await requirePlatformOwner();
   const params = await searchParams;
-  const [settings, auditEvents] = await Promise.all([getSiteSettings(), getRecentAuditEvents(8)]);
+  const [settings, auditEvents, placeSuggestions] = await Promise.all([
+    getSiteSettings(),
+    getRecentAuditEvents(8),
+    getPlaceSuggestionsForAdmin(),
+  ]);
 
   return (
     <main className="min-h-screen bg-[var(--mist-cream)] px-4 py-6 text-[var(--main-text)]">
@@ -134,6 +268,14 @@ export default async function AdminPage({
               name="prototypeBannerText"
               value={settings.prototypeBannerText}
             />
+            <label className="flex items-center gap-2 text-sm">
+              <input
+                name="enablePlaceSuggestions"
+                type="checkbox"
+                defaultChecked={settings.enablePlaceSuggestions}
+              />
+              Enable public landmark/facility suggestions
+            </label>
           </Section>
 
           <Section title="About">
@@ -249,6 +391,8 @@ export default async function AdminPage({
             Save settings
           </button>
         </form>
+
+        <AdminPlaceSuggestions suggestions={placeSuggestions} />
 
         <section className="rounded border border-[var(--sage-border)] bg-[var(--card-bg)] p-6 shadow">
           <h2 className="mb-4 text-lg font-semibold">Recent Audit Events</h2>
