@@ -552,19 +552,23 @@ export default function MapView({
           text={siteSettings.prototypeBannerText}
         />
         {/* Filter controls and map action buttons */}
-        <div className="map-control-panel absolute left-2 top-16 z-10 max-w-[calc(100vw-1rem)] rounded-md border border-[var(--sage-border)] bg-[var(--card-bg)]/80 p-1.5 shadow backdrop-blur-sm">
+        <div
+          className={`map-control-panel absolute left-1 z-10 max-w-[calc(100vw-0.5rem)] rounded-md border border-[var(--sage-border)] bg-[var(--card-bg)]/80 p-1.5 shadow backdrop-blur-sm ${
+            siteSettings.showPrototypeBanner ? 'top-11' : 'top-1'
+          }`}
+        >
           <FilterControls
             categories={CATEGORY_LIST}
             selected={selectedCategory}
             onSelect={(cat) => setSelectedCategory(cat === selectedCategory ? 'All' : cat)}
           />
-          <div className="mt-1.5 space-y-1.5">
+          <div className="mt-1.5 flex flex-wrap items-start gap-1.5">
             <LocationButton map={mapInstance} />
             {siteSettings.enablePlaceSuggestions ? (
               <button
                 type="button"
                 onClick={() => setSuggestOpen(true)}
-                className="block min-h-9 rounded bg-[var(--donate-amber)] px-3 py-1.5 text-xs font-semibold text-white shadow"
+                className="min-h-9 rounded bg-[var(--donate-amber)] px-3 py-1.5 text-xs font-semibold text-white shadow"
               >
                 Suggest Place
               </button>
