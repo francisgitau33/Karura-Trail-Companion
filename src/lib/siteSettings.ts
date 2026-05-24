@@ -25,6 +25,8 @@ export interface SiteSettings {
   linkedinUrl: string;
   mediumUrl: string;
   enablePlaceSuggestions: boolean;
+  enablePublicTrailRecording: boolean;
+  showApprovedTrails: boolean;
 }
 
 export const fallbackSiteSettings: SiteSettings = {
@@ -56,6 +58,8 @@ export const fallbackSiteSettings: SiteSettings = {
   linkedinUrl: '',
   mediumUrl: '',
   enablePlaceSuggestions: false,
+  enablePublicTrailRecording: false,
+  showApprovedTrails: false,
 };
 
 interface SiteSettingsRow {
@@ -84,6 +88,8 @@ interface SiteSettingsRow {
   linkedin_url: string | null;
   medium_url: string | null;
   enable_place_suggestions: boolean | null;
+  enable_public_trail_recording: boolean | null;
+  show_approved_trails: boolean | null;
 }
 
 function rowToSettings(row: SiteSettingsRow): SiteSettings {
@@ -117,6 +123,8 @@ function rowToSettings(row: SiteSettingsRow): SiteSettings {
     linkedinUrl: row.linkedin_url ?? '',
     mediumUrl: row.medium_url ?? '',
     enablePlaceSuggestions: Boolean(row.enable_place_suggestions),
+    enablePublicTrailRecording: Boolean(row.enable_public_trail_recording),
+    showApprovedTrails: Boolean(row.show_approved_trails),
   };
 }
 
@@ -137,7 +145,9 @@ export async function getSiteSettings(): Promise<SiteSettings> {
           donation_note, website_url, website_button_text,
           safety_title, safety_body, boundary_disclaimer, visitor_guidance_note,
           contact_email, linkedin_url, medium_url,
-          (to_jsonb(site_settings)->>'enable_place_suggestions')::boolean as enable_place_suggestions
+          (to_jsonb(site_settings)->>'enable_place_suggestions')::boolean as enable_place_suggestions,
+          (to_jsonb(site_settings)->>'enable_public_trail_recording')::boolean as enable_public_trail_recording,
+          (to_jsonb(site_settings)->>'show_approved_trails')::boolean as show_approved_trails
         from site_settings
         order by created_at asc
         limit 1
@@ -238,6 +248,8 @@ export async function saveSiteSettings(settings: SiteSettings, updatedBy: string
     settings.linkedinUrl,
     settings.mediumUrl,
     settings.enablePlaceSuggestions,
+    settings.enablePublicTrailRecording,
+    settings.showApprovedTrails,
     updatedBy,
   ];
 
@@ -252,8 +264,11 @@ export async function saveSiteSettings(settings: SiteSettings, updatedBy: string
           website_url = $13, website_button_text = $14, safety_title = $15,
           safety_body = $16, boundary_disclaimer = $17, visitor_guidance_note = $18,
           contact_email = $19, linkedin_url = $20, medium_url = $21,
-          enable_place_suggestions = $22, updated_by = $23, updated_at = now()
-        where id = $24
+          enable_place_suggestions = $22,
+          enable_public_trail_recording = $23,
+          show_approved_trails = $24,
+          updated_by = $25, updated_at = now()
+        where id = $26
       `,
       [...values, existing.rows[0].id],
     );
@@ -268,11 +283,12 @@ export async function saveSiteSettings(settings: SiteSettings, updatedBy: string
         donate_title, donate_body, mpesa_paybill, mpesa_account_reference,
         donation_note, website_url, website_button_text,
         safety_title, safety_body, boundary_disclaimer, visitor_guidance_note,
-        contact_email, linkedin_url, medium_url, enable_place_suggestions, updated_by
+        contact_email, linkedin_url, medium_url, enable_place_suggestions,
+        enable_public_trail_recording, show_approved_trails, updated_by
       )
       values (
         $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11,
-        $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, $22, $23
+        $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, $22, $23, $24, $25
       )
       returning id
     `,
