@@ -681,7 +681,14 @@ export default async function AdminPage({
               </div>
             </div>
             <div className="md:col-span-2">
-              <TextArea label="About body" name="aboutBody" value={settings.aboutBody} />
+              <input type="hidden" name="aboutBody" value={settings.aboutBody} />
+              <TextArea label="About the Map" name="aboutMapBody" value={settings.aboutMapBody} />
+            </div>
+            <div className="md:col-span-2">
+              <TextArea label="About KCH" name="aboutKchBody" value={settings.aboutKchBody} />
+            </div>
+            <div className="md:col-span-2">
+              <TextArea label="Final Comment" name="aboutFinalComment" value={settings.aboutFinalComment} />
             </div>
           </Section>
 
