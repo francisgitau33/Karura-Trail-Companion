@@ -5,6 +5,7 @@ import type { Map, Marker } from 'maplibre-gl';
 import { mapConfig } from "../data/mapConfig";
 import type { PublicPlaceSuggestion } from "../lib/placeSuggestions";
 import type { SiteSettings } from "../lib/siteSettings";
+import type { PublicTrailSuggestion } from "../lib/trailSuggestions";
 import Header from "./Header";
 import PrototypeBanner from "./PrototypeBanner";
 import FilterControls from "./FilterControls";
@@ -15,9 +16,9 @@ import DonateModal from "./DonateModal";
 import NatureAnimations from "./NatureAnimations";
 import SafetyModal from "./SafetyModal";
 import SuggestPlaceModal from "./SuggestPlaceModal";
+import RecordTrailModal from "./RecordTrailModal";
 import TrailInfoPanel, { TrailProperties } from "./TrailInfoPanel";
 
-// Define available categories for filters.
 const CATEGORY_LIST = [
   'Walk & Jog',
   'Cycling',
@@ -27,42 +28,58 @@ const CATEGORY_LIST = [
 
 const MAP_STYLE_URL = 'https://basemaps.cartocdn.com/gl/positron-gl-style/style.json';
 
-/**
- * Primary map view component. Handles map setup, data loading, user interactions,
- * modals and filters. This component runs only on the client.
- */
 export default function MapView({
   siteSettings,
   approvedPlaceSuggestions,
+  approvedTrailSuggestions,
 }: {
   siteSettings: SiteSettings;
   approvedPlaceSuggestions: PublicPlaceSuggestion[];
+  approvedTrailSuggestions: PublicTrailSuggestion[];
 }) {
-  // Modal state
   const [aboutOpen, setAboutOpen] = useState(false);
   const [donateOpen, setDonateOpen] = useState(false);
   const [safetyOpen, setSafetyOpen] = useState(false);
   const [boundaryInfoOpen, setBoundaryInfoOpen] = useState(false);
   const [suggestOpen, setSuggestOpen] = useState(false);
+  const [recordTrailOpen, setRecordTrailOpen] = useState(false);
+  const [recordingTrailPoints, setRecordingTrailPoints] = useState<Array<{ latitude: number; longitude: number }>>([]);
   const [choosingSuggestionLocation, setChoosingSuggestionLocation] = useState(false);
   const [suggestionCoordinates, setSuggestionCoordinates] = useState<{
     latitude: number;
     longitude: number;
   } | null>(null);
-  // Selected trail details
   const [selectedTrail, setSelectedTrail] = useState<TrailProperties | null>(null);
-  // Selected filter category
   const [selectedCategory, setSelectedCategory] = useState<string>('All');
 
-  // Map container and map instance refs
   const mapContainerRef = useRef<HTMLDivElement | null>(null);
   const mapRef = useRef<Map | null>(null);
   const [mapInstance, setMapInstance] = useState<Map | null>(null);
   const suggestionModeRef = useRef(false);
   const suggestionMarkerRef = useRef<Marker | null>(null);
-  // Keep track of loaded data to avoid re-fetching
   const dataLoadedRef = useRef(false);
   const interactionsBoundRef = useRef(false);
+
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!map || !dataLoadedRef.current || !map.getSource('recording-trail-preview')) return;
+    const source = map.getSource('recording-trail-preview') as any;
+    source.setData({
+      type: 'FeatureCollection',
+      features: recordingTrailPoints.length > 1
+        ? [
+            {
+              type: 'Feature',
+              geometry: {
+                type: 'LineString',
+                coordinates: recordingTrailPoints.map((point) => [point.longitude, point.latitude]),
+              },
+              properties: {},
+            },
+          ]
+        : [],
+    });
+  }, [recordingTrailPoints]);
 
   useEffect(() => {
     suggestionModeRef.current = choosingSuggestionLocation;
@@ -92,7 +109,6 @@ export default function MapView({
   }, [mapInstance, suggestionCoordinates]);
 
   useEffect(() => {
-    // Initialize the map only once
     if (mapRef.current || !mapContainerRef.current) return;
 
     let cancelled = false;
@@ -274,6 +290,70 @@ export default function MapView({
                 'circle-stroke-color': '#FFFFFF',
               },
             });
+            map.addSource('approved-trail-suggestions', {
+              type: 'geojson',
+              data: {
+                type: 'FeatureCollection',
+                features: approvedTrailSuggestions.map((trail) => ({
+                  type: 'Feature',
+                  geometry: trail.pathGeojson,
+                  properties: {
+                    id: trail.id,
+                    type: trail.type,
+                    category:
+                      trail.type === 'cycling'
+                        ? 'Cycling'
+                        : trail.type === 'family_walk'
+                          ? 'Family Walk'
+                          : 'Walk & Jog',
+                    name: trail.name,
+                    description: trail.description,
+                    distanceMeters: trail.distanceMeters,
+                    durationSeconds: trail.durationSeconds,
+                    status: 'Approved community trail',
+                  },
+                })),
+              } as any,
+            });
+            map.addLayer({
+              id: 'approved-trails-line',
+              type: 'line',
+              source: 'approved-trail-suggestions',
+              paint: {
+                'line-color': [
+                  'match',
+                  ['get', 'type'],
+                  'cycling',
+                  '#2F80B7',
+                  'family_walk',
+                  '#8E7CC3',
+                  '#2FB85A',
+                ],
+                'line-width': 4,
+                'line-opacity': 0.9,
+              },
+            });
+            map.addSource('recording-trail-preview', {
+              type: 'geojson',
+              data: {
+                type: 'FeatureCollection',
+                features: [],
+              },
+            });
+            map.addLayer({
+              id: 'recording-trail-preview-line',
+              type: 'line',
+              source: 'recording-trail-preview',
+              paint: {
+                'line-color': '#D89B45',
+                'line-width': 4,
+                'line-opacity': 0.9,
+                'line-dasharray': [1, 1],
+              },
+            });
+            if (map.getLayer('approved-suggestions-circle')) {
+              map.moveLayer('approved-suggestions-circle');
+            }
             map.addSource('gates', {
               type: 'geojson',
               data: gatesData,
@@ -372,6 +452,20 @@ export default function MapView({
                 showPoiPopup(e);
               });
 
+              map.on('click', 'approved-trails-line', (e: any) => {
+                if (!map.getLayer('approved-trails-line')) return;
+                const feature = e.features && e.features[0];
+                if (!feature) return;
+                const props = feature.properties as any;
+                const distanceKm = props.distanceMeters ? (Number(props.distanceMeters) / 1000).toFixed(2) : '0.00';
+                const durationMin = props.durationSeconds ? Math.round(Number(props.durationSeconds) / 60) : 0;
+                const html = `<strong>${props.name}</strong><br />Category: ${props.category}<br />Distance: ${distanceKm} km<br />Duration: ${durationMin} min<br />${props.description}<br /><small>${props.status}</small>`;
+                new maplibre.Popup()
+                  .setLngLat(e.lngLat)
+                  .setHTML(html)
+                  .addTo(map);
+              });
+
               map.on('click', 'gates-circle', (e: any) => {
                 if (!map.getLayer('gates-circle')) return;
                 const feature = e.features && e.features[0];
@@ -400,6 +494,7 @@ export default function MapView({
 
               [
                 'trails-line',
+                'approved-trails-line',
                 'pois-circle',
                 'approved-suggestions-circle',
                 'gates-circle',
@@ -469,19 +564,19 @@ export default function MapView({
     };
   }, []);
 
-  // Apply category filters when selectedCategory changes
   useEffect(() => {
     const map = mapRef.current;
     if (!map || !dataLoadedRef.current) return;
     if (
       !map.getLayer('trails-line') ||
+      !map.getLayer('approved-trails-line') ||
       !map.getLayer('pois-circle') ||
       !map.getLayer('approved-suggestions-circle') ||
       !map.getLayer('gates-circle')
     ) return;
-    // Reset filters
     try {
       map.setFilter('trails-line', null);
+      map.setFilter('approved-trails-line', null);
       map.setFilter('pois-circle', ['!=', ['get', 'category'], 'Gate']);
       map.setFilter('approved-suggestions-circle', null);
       map.setFilter('gates-circle', null);
@@ -489,7 +584,6 @@ export default function MapView({
         map.setFilter('gates-label', null);
       }
     } catch (err) {
-      // Map not ready
       return;
     }
     if (selectedCategory === 'All') {
@@ -515,6 +609,25 @@ export default function MapView({
       'trails-line',
       (trailTypes.length
         ? ['in', ['get', 'type'], ['literal', trailTypes]]
+        : ['==', ['get', 'type'], '__hidden__']) as any,
+    );
+    map.setFilter(
+      'approved-trails-line',
+      (trailTypes.length || selectedCategory === 'Family & Facilities'
+        ? [
+            'in',
+            ['get', 'type'],
+            [
+              'literal',
+              selectedCategory === 'Family & Facilities'
+                ? ['family_walk']
+                : selectedCategory === 'Cycling'
+                  ? ['cycling']
+                  : selectedCategory === 'Walk & Jog'
+                    ? ['walk_jog']
+                    : [],
+            ],
+          ]
         : ['==', ['get', 'type'], '__hidden__']) as any,
     );
     map.setFilter(
@@ -546,12 +659,10 @@ export default function MapView({
       />
       <main className="map-shell relative flex-1 min-h-[600px]">
         <div ref={mapContainerRef} className="absolute inset-0" />
-        {/* Prototype banner */}
         <PrototypeBanner
           show={siteSettings.showPrototypeBanner}
           text={siteSettings.prototypeBannerText}
         />
-        {/* Filter controls and map action buttons */}
         <div
           className={`map-control-panel absolute left-1 z-10 max-w-[calc(100vw-0.5rem)] rounded-md border border-[var(--sage-border)] bg-[var(--card-bg)]/80 p-1.5 shadow backdrop-blur-sm ${
             siteSettings.showPrototypeBanner ? 'top-11' : 'top-1'
@@ -573,6 +684,15 @@ export default function MapView({
                 Suggest Place
               </button>
             ) : null}
+            {siteSettings.enablePublicTrailRecording ? (
+              <button
+                type="button"
+                onClick={() => setRecordTrailOpen(true)}
+                className="min-h-9 rounded bg-[var(--forest-header)] px-3 py-1.5 text-xs font-semibold text-[var(--warm-ivory)] shadow"
+              >
+                Record Trail
+              </button>
+            ) : null}
           </div>
           {choosingSuggestionLocation ? (
             <p className="mt-1.5 max-w-[10.5rem] rounded bg-[var(--sand-yellow)] px-2 py-1 text-[10px] leading-snug text-[var(--brown-olive)] shadow">
@@ -581,10 +701,8 @@ export default function MapView({
           ) : null}
         </div>
         <NatureAnimations />
-        {/* Trail information panel */}
         <TrailInfoPanel trail={selectedTrail} onClose={() => setSelectedTrail(null)} />
       </main>
-      {/* Modals */}
       <AboutModal
         open={aboutOpen}
         settings={siteSettings}
@@ -594,6 +712,14 @@ export default function MapView({
       <DonateModal open={donateOpen} settings={siteSettings} onClose={() => setDonateOpen(false)} />
       <SafetyModal open={safetyOpen} settings={siteSettings} onClose={() => setSafetyOpen(false)} />
       <BoundaryInfoModal open={boundaryInfoOpen} onClose={() => setBoundaryInfoOpen(false)} />
+      <RecordTrailModal
+        open={recordTrailOpen}
+        onClose={() => {
+          setRecordTrailOpen(false);
+          setRecordingTrailPoints([]);
+        }}
+        onPointsChange={setRecordingTrailPoints}
+      />
       <SuggestPlaceModal
         open={suggestOpen}
         coordinates={suggestionCoordinates}
