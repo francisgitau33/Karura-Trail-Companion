@@ -10,6 +10,40 @@ interface AboutModalProps {
   onSupport: () => void;
 }
 
+function hasStructuredAbout(settings: SiteSettings) {
+  return Boolean(
+    settings.aboutMapBody.trim() ||
+      settings.aboutKchBody.trim() ||
+      settings.aboutFinalComment.trim(),
+  );
+}
+
+function TextBlock({ children }: { children: string }) {
+  const paragraphs = children
+    .split(/\n+/)
+    .map((paragraph) => paragraph.trim())
+    .filter(Boolean);
+
+  return (
+    <div className="space-y-2 text-sm leading-relaxed">
+      {paragraphs.map((paragraph) => (
+        <p key={paragraph}>{paragraph}</p>
+      ))}
+    </div>
+  );
+}
+
+function AboutSection({ title, body }: { title: string; body: string }) {
+  if (!body.trim()) return null;
+
+  return (
+    <section className="mb-4">
+      <h3 className="mb-1 text-sm font-semibold text-[var(--charcoal-green)]">{title}</h3>
+      <TextBlock>{body}</TextBlock>
+    </section>
+  );
+}
+
 /**
  * Modal displaying the About information. Includes a support button that triggers the Donate modal.
  */
@@ -47,9 +81,17 @@ export default function AboutModal({ open, settings, onClose, onSupport }: About
         <h2 id="aboutModalTitle" className="text-xl font-semibold mb-2">
           {settings.aboutTitle}
         </h2>
-        <p className="mb-4 text-sm">
-          {settings.aboutBody}
-        </p>
+        {hasStructuredAbout(settings) ? (
+          <div className="mb-4">
+            <AboutSection title="About this Map" body={settings.aboutMapBody} />
+            <AboutSection title="About Kenya Children's Homes" body={settings.aboutKchBody} />
+            <AboutSection title="A final note" body={settings.aboutFinalComment} />
+          </div>
+        ) : (
+          <div className="mb-4">
+            <TextBlock>{settings.aboutBody}</TextBlock>
+          </div>
+        )}
         <button
           onClick={() => {
             onClose();
