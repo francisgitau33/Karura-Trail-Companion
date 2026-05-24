@@ -47,6 +47,9 @@ export default function SafetyModal({ open, settings, onClose }: SafetyModalProp
         {settings.visitorGuidanceNote ? (
           <p className="mb-4 text-sm">{settings.visitorGuidanceNote}</p>
         ) : null}
+        <p className="mb-4 text-sm">
+          Location is used only in your browser and is not stored.
+        </p>
         <button
           onClick={onClose}
           className="min-h-10 bg-[var(--soft-stone)] text-[var(--charcoal-green)] px-4 py-2 rounded text-sm"
