@@ -1,10 +1,11 @@
 import Link from 'next/link';
 import type { ReactNode } from 'react';
-import { reviewPlaceSuggestionAction, saveSettingsAction } from './actions';
+import { reviewPlaceSuggestionAction, reviewTrailSuggestionAction, saveSettingsAction } from './actions';
 import { getRecentAuditEvents } from '../../lib/audit';
 import { getCmsSetupStatus, requirePlatformOwner } from '../../lib/auth';
 import { getSiteSettings, SiteSettings } from '../../lib/siteSettings';
 import { getPlaceSuggestionsForAdmin, PlaceSuggestion } from '../../lib/placeSuggestions';
+import { getTrailSuggestionsForAdmin, TrailSuggestion, trailTypeLabel } from '../../lib/trailSuggestions';
 
 export const dynamic = 'force-dynamic';
 
@@ -66,8 +67,33 @@ function suggestionStatusLabel(status: PlaceSuggestion['status']) {
   return labels[status];
 }
 
+function trailStatusLabel(status: TrailSuggestion['status']) {
+  const labels: Record<TrailSuggestion['status'], string> = {
+    pending: 'Pending',
+    approved: 'Approved',
+    rejected: 'Rejected',
+    merged: 'Duplicate / Merged',
+    archived: 'Removed from map',
+  };
+  return labels[status];
+}
+
 function suggestionDate(suggestion: PlaceSuggestion) {
   return suggestion.reviewedAt || suggestion.updatedAt || suggestion.createdAt;
+}
+
+function trailDate(trail: TrailSuggestion) {
+  return trail.reviewedAt || trail.updatedAt || trail.createdAt;
+}
+
+function formatTrailDistance(meters: number) {
+  if (meters < 1000) return `${Math.round(meters)} m`;
+  return `${(meters / 1000).toFixed(2)} km`;
+}
+
+function formatTrailDuration(seconds: number) {
+  if (!seconds) return '0 min';
+  return `${Math.max(1, Math.round(seconds / 60))} min`;
 }
 
 function PendingSuggestionCard({ suggestion }: { suggestion: PlaceSuggestion }) {
@@ -283,6 +309,210 @@ function AdminPlaceSuggestions({ suggestions }: { suggestions: PlaceSuggestion[]
   );
 }
 
+function PendingTrailCard({ trail }: { trail: TrailSuggestion }) {
+  return (
+    <form
+      action={reviewTrailSuggestionAction}
+      className="space-y-3 rounded border border-[var(--sage-border)] bg-white p-4 text-sm"
+    >
+      <input type="hidden" name="id" value={trail.id} />
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <div>
+          <p className="font-semibold">{trail.name}</p>
+          <p className="text-xs uppercase tracking-wide text-[var(--charcoal-green)]">
+            Status: Pending - {new Date(trail.createdAt).toLocaleString()}
+          </p>
+        </div>
+        <span className="rounded bg-[var(--soft-stone)] px-2 py-1 text-xs text-[var(--charcoal-green)]">
+          {formatTrailDistance(trail.distanceMeters)} / {trail.pointCount} points
+        </span>
+      </div>
+      <div className="grid gap-3 md:grid-cols-2">
+        <label className="block">
+          <span className="font-medium">Trail type</span>
+          <select
+            name="type"
+            defaultValue={trail.type}
+            className="mt-1 w-full rounded border border-[var(--sage-border)] px-3 py-2"
+          >
+            <option value="walk_jog">Walk & Jog</option>
+            <option value="cycling">Cycling</option>
+            <option value="family_walk">Family Walk</option>
+          </select>
+        </label>
+        <label className="block">
+          <span className="font-medium">Name</span>
+          <input
+            name="name"
+            defaultValue={trail.name}
+            maxLength={80}
+            className="mt-1 w-full rounded border border-[var(--sage-border)] px-3 py-2"
+          />
+        </label>
+      </div>
+      <label className="block">
+        <span className="font-medium">Description</span>
+        <textarea
+          name="description"
+          defaultValue={trail.description}
+          maxLength={500}
+          rows={3}
+          className="mt-1 w-full rounded border border-[var(--sage-border)] px-3 py-2"
+        />
+      </label>
+      <div className="grid gap-2 text-xs text-[var(--charcoal-green)] md:grid-cols-2">
+        <p>Distance: {formatTrailDistance(trail.distanceMeters)}</p>
+        <p>Duration: {formatTrailDuration(trail.durationSeconds)}</p>
+        <p>Source: {trail.source}</p>
+        <p>Points: {trail.pointCount}</p>
+        {trail.startCoordinate ? <p>Start: {trail.startCoordinate[1]}, {trail.startCoordinate[0]}</p> : null}
+        {trail.endCoordinate ? <p>End: {trail.endCoordinate[1]}, {trail.endCoordinate[0]}</p> : null}
+      </div>
+      {trail.contactEmail ? (
+        <p className="text-xs text-[var(--charcoal-green)]">Optional contact: {trail.contactEmail}</p>
+      ) : null}
+      <label className="block">
+        <span className="font-medium">Admin notes</span>
+        <textarea
+          name="adminNotes"
+          defaultValue={trail.adminNotes}
+          maxLength={500}
+          rows={2}
+          className="mt-1 w-full rounded border border-[var(--sage-border)] px-3 py-2"
+        />
+      </label>
+      <div className="flex flex-wrap gap-2">
+        <button
+          type="submit"
+          name="reviewAction"
+          value="approve"
+          className="rounded bg-[var(--trail-green)] px-3 py-2 text-xs font-semibold text-white"
+        >
+          Approve
+        </button>
+        <button
+          type="submit"
+          name="reviewAction"
+          value="reject"
+          className="rounded bg-[var(--safety-red)] px-3 py-2 text-xs font-semibold text-white"
+        >
+          Reject
+        </button>
+        <button
+          type="submit"
+          name="reviewAction"
+          value="merge"
+          className="rounded bg-[var(--soft-stone)] px-3 py-2 text-xs font-semibold text-[var(--charcoal-green)]"
+        >
+          Mark duplicate
+        </button>
+      </div>
+    </form>
+  );
+}
+
+function ReviewedTrailRow({ trail }: { trail: TrailSuggestion }) {
+  return (
+    <div className="rounded border border-[var(--sage-border)] bg-white p-3 text-sm">
+      <div className="flex flex-wrap items-start justify-between gap-3">
+        <div>
+          <p className="font-semibold">{trail.name}</p>
+          <p className="text-xs text-[var(--charcoal-green)]">
+            {trailTypeLabel(trail.type)} - {formatTrailDistance(trail.distanceMeters)} -{' '}
+            {new Date(trailDate(trail)).toLocaleString()}
+          </p>
+        </div>
+        <span className={`status-pill status-${trail.status}`}>
+          {trailStatusLabel(trail.status)}
+        </span>
+      </div>
+      <p className="mt-2 truncate text-xs text-[var(--charcoal-green)]">{trail.description}</p>
+      <details className="mt-3 text-xs text-[var(--charcoal-green)]">
+        <summary className="cursor-pointer font-semibold text-[var(--main-text)]">View details</summary>
+        <div className="mt-2 space-y-1">
+          <p>Duration: {formatTrailDuration(trail.durationSeconds)}</p>
+          <p>Source: {trail.source}</p>
+          <p>Points: {trail.pointCount}</p>
+          {trail.startCoordinate ? <p>Start: {trail.startCoordinate[1]}, {trail.startCoordinate[0]}</p> : null}
+          {trail.endCoordinate ? <p>End: {trail.endCoordinate[1]}, {trail.endCoordinate[0]}</p> : null}
+          {trail.adminNotes ? <p>Admin notes: {trail.adminNotes}</p> : null}
+          {trail.contactEmail ? <p>Submitter contact: {trail.contactEmail}</p> : null}
+          <p>Submitted: {new Date(trail.createdAt).toLocaleString()}</p>
+          {trail.reviewedAt ? <p>Reviewed: {new Date(trail.reviewedAt).toLocaleString()}</p> : null}
+        </div>
+      </details>
+      {trail.status === 'approved' ? (
+        <details className="mt-3 rounded border border-[var(--sage-border)] bg-[var(--mist-cream)] p-3 text-xs">
+          <summary className="cursor-pointer font-semibold text-[var(--safety-red)]">
+            Remove from public map
+          </summary>
+          <p className="mt-2 text-[var(--main-text)]">
+            Remove this approved trail from the public map? It will no longer appear to visitors,
+            but the record will remain in Admin history.
+          </p>
+          <form action={reviewTrailSuggestionAction} className="mt-3">
+            <input type="hidden" name="id" value={trail.id} />
+            <button
+              type="submit"
+              name="reviewAction"
+              value="archive"
+              className="rounded bg-[var(--safety-red)] px-3 py-2 text-xs font-semibold text-white"
+            >
+              Confirm remove from public map
+            </button>
+          </form>
+        </details>
+      ) : null}
+    </div>
+  );
+}
+
+function AdminTrailSuggestions({ trails }: { trails: TrailSuggestion[] }) {
+  const pending = trails.filter((trail) => trail.status === 'pending');
+  const reviewed = trails.filter((trail) => trail.status !== 'pending');
+
+  return (
+    <section className="rounded border border-[var(--sage-border)] bg-[var(--card-bg)] p-6 shadow">
+      <h2 className="mb-4 text-lg font-semibold">Trail Suggestions</h2>
+      <p className="mb-4 text-sm text-[var(--charcoal-green)]">
+        GPS trail submissions appear on the map only after approval and only when approved trail display is enabled.
+        Rejected, duplicate, and removed trails remain in Admin history but are not shown publicly.
+      </p>
+      <div className="space-y-6">
+        <div>
+          <h3 className="mb-3 text-sm font-semibold uppercase tracking-wide text-[var(--charcoal-green)]">
+            Pending Review ({pending.length})
+          </h3>
+          {pending.length ? (
+            <div className="space-y-4">
+              {pending.map((trail) => (
+                <PendingTrailCard key={trail.id} trail={trail} />
+              ))}
+            </div>
+          ) : (
+            <p className="text-sm">No pending trail suggestions.</p>
+          )}
+        </div>
+
+        <div>
+          <h3 className="mb-3 text-sm font-semibold uppercase tracking-wide text-[var(--charcoal-green)]">
+            Reviewed Suggestions ({reviewed.length})
+          </h3>
+          {reviewed.length ? (
+            <div className="space-y-3">
+              {reviewed.map((trail) => (
+                <ReviewedTrailRow key={trail.id} trail={trail} />
+              ))}
+            </div>
+          ) : (
+            <p className="text-sm">No reviewed trail suggestions yet.</p>
+          )}
+        </div>
+      </div>
+    </section>
+  );
+}
+
 export default async function AdminPage({
   searchParams,
 }: {
@@ -309,10 +539,11 @@ export default async function AdminPage({
 
   const session = await requirePlatformOwner();
   const params = await searchParams;
-  const [settings, auditEvents, placeSuggestions] = await Promise.all([
+  const [settings, auditEvents, placeSuggestions, trailSuggestions] = await Promise.all([
     getSiteSettings(),
     getRecentAuditEvents(8),
     getPlaceSuggestionsForAdmin(),
+    getTrailSuggestionsForAdmin(),
   ]);
 
   return (
@@ -375,6 +606,30 @@ export default async function AdminPage({
               />
               Enable public landmark/facility suggestions
             </label>
+            <div className="md:col-span-2 rounded border border-[var(--sage-border)] bg-white p-3">
+              <p className="mb-3 text-xs text-[var(--charcoal-green)]">
+                Trail recording is intended for controlled testing first. Keep it disabled until you are ready
+                to collect trail submissions.
+              </p>
+              <div className="grid gap-3 md:grid-cols-2">
+                <label className="flex items-center gap-2 text-sm">
+                  <input
+                    name="enablePublicTrailRecording"
+                    type="checkbox"
+                    defaultChecked={settings.enablePublicTrailRecording}
+                  />
+                  Enable public trail recording
+                </label>
+                <label className="flex items-center gap-2 text-sm">
+                  <input
+                    name="showApprovedTrails"
+                    type="checkbox"
+                    defaultChecked={settings.showApprovedTrails}
+                  />
+                  Show approved trails on public map
+                </label>
+              </div>
+            </div>
           </Section>
 
           <Section title="About">
@@ -492,6 +747,8 @@ export default async function AdminPage({
         </form>
 
         <AdminPlaceSuggestions suggestions={placeSuggestions} />
+
+        <AdminTrailSuggestions trails={trailSuggestions} />
 
         <section className="rounded border border-[var(--sage-border)] bg-[var(--card-bg)] p-6 shadow">
           <h2 className="mb-4 text-lg font-semibold">Recent Audit Events</h2>
