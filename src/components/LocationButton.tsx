@@ -120,9 +120,6 @@ export default function LocationButton({ map }: LocationButtonProps) {
           {message}
         </p>
       ) : null}
-      <p className="rounded bg-white/70 px-2 py-1 text-[10px] leading-snug text-[var(--charcoal-green)]">
-        Location is used only in your browser and is not stored.
-      </p>
     </div>
   );
 }
