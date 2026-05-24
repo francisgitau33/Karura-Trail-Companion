@@ -20,6 +20,18 @@ function text(formData: FormData, key: keyof SiteSettings) {
   return String(formData.get(key) ?? '').trim();
 }
 
+function combinedAboutBody(formData: FormData) {
+  const structuredBody = [
+    text(formData, 'aboutMapBody'),
+    text(formData, 'aboutKchBody'),
+    text(formData, 'aboutFinalComment'),
+  ]
+    .filter(Boolean)
+    .join('\n\n');
+
+  return structuredBody || text(formData, 'aboutBody');
+}
+
 async function readLogoUpload(formData: FormData, requireFile = false) {
   const file = formData.get('officialLogoFile');
   if (!(file instanceof File) || file.size === 0) {
@@ -60,7 +72,10 @@ export async function saveSettingsAction(formData: FormData) {
     prototypeBannerText: text(formData, 'prototypeBannerText'),
     showPrototypeBanner: formData.get('showPrototypeBanner') === 'on',
     aboutTitle: text(formData, 'aboutTitle'),
-    aboutBody: text(formData, 'aboutBody'),
+    aboutBody: combinedAboutBody(formData),
+    aboutMapBody: text(formData, 'aboutMapBody'),
+    aboutKchBody: text(formData, 'aboutKchBody'),
+    aboutFinalComment: text(formData, 'aboutFinalComment'),
     aboutCallToActionText: text(formData, 'aboutCallToActionText'),
     officialLogoSrc: '',
     officialLogoFilename: '',
