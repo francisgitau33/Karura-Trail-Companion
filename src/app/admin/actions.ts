@@ -11,6 +11,7 @@ import {
   validateSiteSettings,
 } from '../../lib/siteSettings';
 import { reviewPlaceSuggestion } from '../../lib/placeSuggestions';
+import { reviewTrailSuggestion } from '../../lib/trailSuggestions';
 
 const MAX_LOGO_SIZE_BYTES = 1024 * 1024;
 const ALLOWED_LOGO_TYPES = ['image/png', 'image/jpeg', 'image/webp'];
@@ -78,6 +79,8 @@ export async function saveSettingsAction(formData: FormData) {
     linkedinUrl: text(formData, 'linkedinUrl'),
     mediumUrl: text(formData, 'mediumUrl'),
     enablePlaceSuggestions: formData.get('enablePlaceSuggestions') === 'on',
+    enablePublicTrailRecording: formData.get('enablePublicTrailRecording') === 'on',
+    showApprovedTrails: formData.get('showApprovedTrails') === 'on',
   };
 
   const validationError = validateSiteSettings(settings);
@@ -154,6 +157,46 @@ export async function reviewPlaceSuggestionAction(formData: FormData) {
   } catch (error) {
     console.error('Place suggestion review failed.', error);
     const message = error instanceof Error ? error.message : 'Place suggestion could not be reviewed.';
+    redirect(`/admin?error=${encodeURIComponent(message)}`);
+  }
+
+  revalidatePath('/');
+  revalidatePath('/admin');
+  redirect('/admin?saved=1');
+}
+
+export async function reviewTrailSuggestionAction(formData: FormData) {
+  const session = await requirePlatformOwner();
+  const action = String(formData.get('reviewAction') ?? '');
+  const id = String(formData.get('id') ?? '');
+
+  try {
+    const result = await reviewTrailSuggestion(
+      {
+        id,
+        action:
+          action === 'approve' || action === 'reject' || action === 'merge' || action === 'archive'
+            ? action
+            : 'reject',
+        type: String(formData.get('type') ?? ''),
+        name: String(formData.get('name') ?? ''),
+        description: String(formData.get('description') ?? ''),
+        adminNotes: String(formData.get('adminNotes') ?? ''),
+      },
+      session.userId,
+    );
+
+    await logAuditEvent({
+      actorUserId: session.userId,
+      actorEmail: session.email,
+      action: 'TRAIL_SUGGESTION_REVIEWED',
+      entityType: 'trail_suggestions',
+      entityId: result.id,
+      metadata: { status: result.status },
+    });
+  } catch (error) {
+    console.error('Trail suggestion review failed.', error);
+    const message = error instanceof Error ? error.message : 'Trail suggestion could not be reviewed.';
     redirect(`/admin?error=${encodeURIComponent(message)}`);
   }
 
