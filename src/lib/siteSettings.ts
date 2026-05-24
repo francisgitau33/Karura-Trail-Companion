@@ -7,6 +7,9 @@ export interface SiteSettings {
   showPrototypeBanner: boolean;
   aboutTitle: string;
   aboutBody: string;
+  aboutMapBody: string;
+  aboutKchBody: string;
+  aboutFinalComment: string;
   aboutCallToActionText: string;
   officialLogoSrc: string;
   officialLogoFilename: string;
@@ -38,6 +41,12 @@ export const fallbackSiteSettings: SiteSettings = {
   aboutTitle: 'About this Map',
   aboutBody:
     "This free Karura Forest digital trail companion has been developed by Kenya Children's Home as a public resource for visitors, families, runners, cyclists, and nature lovers. The map helps users explore Karura more confidently by showing trails, gates, landmarks, facilities, and points of interest. Kenya Children's Home supports vulnerable children and young people through care, education, and community-based programmes.",
+  aboutMapBody:
+    'Karura Trail Companion is a free digital map designed to help visitors explore Karura Forest more confidently.',
+  aboutKchBody:
+    "Kenya Children's Homes supports vulnerable children and young people through care, education, and community-based programmes.",
+  aboutFinalComment:
+    'Enjoy your visit to Karura Forest, follow official forest guidance, and thank you for supporting safer futures for children.',
   aboutCallToActionText: "Support Kenya Children's Home",
   officialLogoSrc: '',
   officialLogoFilename: '',
@@ -69,6 +78,9 @@ interface SiteSettingsRow {
   show_prototype_banner: boolean;
   about_title: string;
   about_body: string;
+  about_map_body: string | null;
+  about_kch_body: string | null;
+  about_final_comment: string | null;
   about_call_to_action_text: string | null;
   official_logo_data: string | null;
   official_logo_mime_type: string | null;
@@ -105,6 +117,9 @@ function rowToSettings(row: SiteSettingsRow): SiteSettings {
     showPrototypeBanner: row.show_prototype_banner,
     aboutTitle: row.about_title,
     aboutBody: row.about_body,
+    aboutMapBody: row.about_map_body ?? '',
+    aboutKchBody: row.about_kch_body ?? '',
+    aboutFinalComment: row.about_final_comment ?? '',
     aboutCallToActionText: row.about_call_to_action_text ?? '',
     officialLogoSrc,
     officialLogoFilename: row.official_logo_filename ?? '',
@@ -137,7 +152,11 @@ export async function getSiteSettings(): Promise<SiteSettings> {
     const result = await query<SiteSettingsRow>(
       `
         select app_name, tagline, prototype_banner_text, show_prototype_banner,
-          about_title, about_body, about_call_to_action_text,
+          about_title, about_body,
+          to_jsonb(site_settings)->>'about_map_body' as about_map_body,
+          to_jsonb(site_settings)->>'about_kch_body' as about_kch_body,
+          to_jsonb(site_settings)->>'about_final_comment' as about_final_comment,
+          about_call_to_action_text,
           to_jsonb(site_settings)->>'official_logo_data' as official_logo_data,
           to_jsonb(site_settings)->>'official_logo_mime_type' as official_logo_mime_type,
           to_jsonb(site_settings)->>'official_logo_filename' as official_logo_filename,
@@ -232,6 +251,9 @@ export async function saveSiteSettings(settings: SiteSettings, updatedBy: string
     settings.showPrototypeBanner,
     settings.aboutTitle,
     settings.aboutBody,
+    settings.aboutMapBody,
+    settings.aboutKchBody,
+    settings.aboutFinalComment,
     settings.aboutCallToActionText,
     settings.donateTitle,
     settings.donateBody,
@@ -259,16 +281,17 @@ export async function saveSiteSettings(settings: SiteSettings, updatedBy: string
         update site_settings
         set app_name = $1, tagline = $2, prototype_banner_text = $3,
           show_prototype_banner = $4, about_title = $5, about_body = $6,
-          about_call_to_action_text = $7, donate_title = $8, donate_body = $9,
-          mpesa_paybill = $10, mpesa_account_reference = $11, donation_note = $12,
-          website_url = $13, website_button_text = $14, safety_title = $15,
-          safety_body = $16, boundary_disclaimer = $17, visitor_guidance_note = $18,
-          contact_email = $19, linkedin_url = $20, medium_url = $21,
-          enable_place_suggestions = $22,
-          enable_public_trail_recording = $23,
-          show_approved_trails = $24,
-          updated_by = $25, updated_at = now()
-        where id = $26
+          about_map_body = $7, about_kch_body = $8, about_final_comment = $9,
+          about_call_to_action_text = $10, donate_title = $11, donate_body = $12,
+          mpesa_paybill = $13, mpesa_account_reference = $14, donation_note = $15,
+          website_url = $16, website_button_text = $17, safety_title = $18,
+          safety_body = $19, boundary_disclaimer = $20, visitor_guidance_note = $21,
+          contact_email = $22, linkedin_url = $23, medium_url = $24,
+          enable_place_suggestions = $25,
+          enable_public_trail_recording = $26,
+          show_approved_trails = $27,
+          updated_by = $28, updated_at = now()
+        where id = $29
       `,
       [...values, existing.rows[0].id],
     );
@@ -279,7 +302,8 @@ export async function saveSiteSettings(settings: SiteSettings, updatedBy: string
     `
       insert into site_settings (
         app_name, tagline, prototype_banner_text, show_prototype_banner,
-        about_title, about_body, about_call_to_action_text,
+        about_title, about_body, about_map_body, about_kch_body, about_final_comment,
+        about_call_to_action_text,
         donate_title, donate_body, mpesa_paybill, mpesa_account_reference,
         donation_note, website_url, website_button_text,
         safety_title, safety_body, boundary_disclaimer, visitor_guidance_note,
@@ -288,7 +312,8 @@ export async function saveSiteSettings(settings: SiteSettings, updatedBy: string
       )
       values (
         $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11,
-        $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, $22, $23, $24, $25
+        $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, $22, $23, $24, $25,
+        $26, $27, $28
       )
       returning id
     `,
