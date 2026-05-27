@@ -1,7 +1,12 @@
 "use client";
 
 import React, { useEffect, useRef, useState } from 'react';
-import { haversineDistanceMeters } from '../lib/karuraBoundary';
+import {
+  MAX_LOCATION_ACCURACY_METERS,
+  haversineDistanceMeters,
+  isPointWithinForestBoundaryTolerance,
+  validateTrailWithinForestBoundary,
+} from '../lib/karuraBoundary';
 
 type TrailType = 'walk_jog' | 'cycling' | 'family_walk';
 
@@ -18,6 +23,9 @@ interface RecordTrailModalProps {
 
 const MIN_DISTANCE_METERS = 8;
 const MAX_POINTS = 1000;
+const MAX_CONSECUTIVE_OUTSIDE_READINGS = 3;
+const MAX_DURATION_SECONDS = 6 * 60 * 60;
+const MAX_DISTANCE_METERS = 50000;
 
 function formatDistance(points: TrailPoint[]) {
   const meters = calculateDistance(points);
@@ -52,6 +60,7 @@ export default function RecordTrailModal({ open, onClose, onPointsChange }: Reco
   const [submitting, setSubmitting] = useState(false);
   const watchIdRef = useRef<number | null>(null);
   const pointCountRef = useRef(0);
+  const outsideReadingCountRef = useRef(0);
 
   const stopRecording = () => {
     if (watchIdRef.current !== null && typeof navigator !== 'undefined' && navigator.geolocation) {
@@ -59,6 +68,7 @@ export default function RecordTrailModal({ open, onClose, onPointsChange }: Reco
     }
     watchIdRef.current = null;
     setRecording(false);
+    outsideReadingCountRef.current = 0;
   };
 
   useEffect(() => {
@@ -114,12 +124,14 @@ export default function RecordTrailModal({ open, onClose, onPointsChange }: Reco
     setMessage('');
     setSuccess(false);
     setSubmitting(false);
+    outsideReadingCountRef.current = 0;
   };
 
   const addPoint = (position: GeolocationPosition) => {
-    if (pointCountRef.current >= MAX_POINTS) {
-      stopRecording();
-      setMessage('Trail recording has reached the maximum point limit. Please finish and submit this trail.');
+    if (position.coords.accuracy > MAX_LOCATION_ACCURACY_METERS) {
+      setMessage(
+        `Your location accuracy is currently about ${Math.round(position.coords.accuracy)} metres. Please wait a moment or move to a more open area.`,
+      );
       return;
     }
 
@@ -127,6 +139,27 @@ export default function RecordTrailModal({ open, onClose, onPointsChange }: Reco
       latitude: position.coords.latitude,
       longitude: position.coords.longitude,
     };
+
+    if (!isPointWithinForestBoundaryTolerance(nextPoint.latitude, nextPoint.longitude)) {
+      outsideReadingCountRef.current += 1;
+      setMessage('Some GPS points are outside the forest boundary and are not being added to this trail.');
+
+      if (outsideReadingCountRef.current >= MAX_CONSECUTIVE_OUTSIDE_READINGS) {
+        stopRecording();
+        setMessage(
+          'Recording stopped because your location appears to have left the Karura Forest and Sigiria Forest boundary. Outside-forest points were not saved.',
+        );
+      }
+      return;
+    }
+
+    outsideReadingCountRef.current = 0;
+
+    if (pointCountRef.current >= MAX_POINTS) {
+      stopRecording();
+      setMessage('Trail recording has reached the maximum point limit. Please finish and submit this trail.');
+      return;
+    }
 
     setPoints((current) => {
       const previousPoint = current[current.length - 1];
@@ -169,6 +202,7 @@ export default function RecordTrailModal({ open, onClose, onPointsChange }: Reco
     setElapsedSeconds(0);
     setStartedAt(Date.now());
     setRecording(true);
+    outsideReadingCountRef.current = 0;
     watchIdRef.current = navigator.geolocation.watchPosition(
       addPoint,
       (error) => {
@@ -186,6 +220,23 @@ export default function RecordTrailModal({ open, onClose, onPointsChange }: Reco
   const submitTrail = async () => {
     if (points.length < 3) {
       setMessage('Please record a longer trail before submitting.');
+      return;
+    }
+
+    const boundaryValidation = validateTrailWithinForestBoundary(points);
+    if (!boundaryValidation.ok) {
+      setMessage('This trail includes points outside the Karura Forest and Sigiria Forest boundary. Please review the recording before submitting.');
+      return;
+    }
+
+    const distanceMeters = calculateDistance(points);
+    if (distanceMeters > MAX_DISTANCE_METERS) {
+      setMessage('This trail appears too long for the forest boundary. Please check the recording and try again.');
+      return;
+    }
+
+    if (elapsedSeconds > MAX_DURATION_SECONDS) {
+      setMessage('This recording is too long to submit. Please record one trail at a time.');
       return;
     }
 
