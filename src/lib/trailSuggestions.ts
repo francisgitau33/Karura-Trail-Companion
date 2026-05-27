@@ -1,5 +1,8 @@
 import { isDatabaseConfigured, query } from './db';
-import { haversineDistanceMeters, isCoordinateInKaruraBounds } from './karuraBoundary';
+import {
+  haversineDistanceMeters,
+  validateTrailWithinForestBoundary,
+} from './karuraBoundary';
 
 export type TrailSuggestionType = 'walk_jog' | 'cycling' | 'family_walk';
 export type TrailSuggestionStatus = 'pending' | 'approved' | 'rejected' | 'merged' | 'archived';
@@ -60,6 +63,8 @@ export interface TrailSuggestionReviewInput {
 const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const MAX_TRAIL_POINTS = 1000;
 const MIN_TRAIL_POINTS = 3;
+const MAX_TRAIL_DURATION_SECONDS = 6 * 60 * 60;
+const MAX_TRAIL_DISTANCE_METERS = 50000;
 
 function cleanText(value: string, maxLength: number) {
   return value.replace(/[<>]/g, '').trim().slice(0, maxLength);
@@ -87,8 +92,9 @@ function validateLineString(points: TrailPoint[]) {
     return 'Trail recording has too many points. Please finish and submit a shorter trail.';
   }
 
-  if (!points.every((point) => isCoordinateInKaruraBounds(point.latitude, point.longitude))) {
-    return 'This trail includes points outside the Karura / Thigiria Forest boundary area. Please review the recording before submitting.';
+  const boundaryValidation = validateTrailWithinForestBoundary(points);
+  if (!boundaryValidation.ok) {
+    return 'This trail includes points outside the Karura Forest and Sigiria Forest boundary. Please review the recording before submitting.';
   }
 
   return null;
@@ -125,6 +131,16 @@ export function validateTrailSuggestionInput(input: TrailSuggestionInput) {
   const pathError = validateLineString(input.points);
   if (pathError) {
     return pathError;
+  }
+
+  const distanceMeters = calculateTrailDistanceMeters(input.points);
+  if (distanceMeters > MAX_TRAIL_DISTANCE_METERS) {
+    return 'This trail appears too long for the forest boundary. Please check the recording and try again.';
+  }
+
+  const durationSeconds = Math.max(0, Math.round(Number(input.durationSeconds ?? 0)));
+  if (durationSeconds > MAX_TRAIL_DURATION_SECONDS) {
+    return 'This recording is too long to submit. Please record one trail at a time.';
   }
 
   if (contactEmail && !EMAIL_PATTERN.test(contactEmail)) {
