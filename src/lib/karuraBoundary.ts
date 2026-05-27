@@ -1,4 +1,4 @@
-import boundaryData from '../../public/data/karura-boundary.geojson';
+import { karuraBoundaryGeojson as boundaryData } from '../data/karuraBoundaryGeojson';
 
 export const KARURA_BOUNDS = {
   minLat: -1.275,
