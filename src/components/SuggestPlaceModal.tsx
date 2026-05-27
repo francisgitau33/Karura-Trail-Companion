@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useEffect, useState } from 'react';
+import { isPointWithinForestBoundaryTolerance } from '../lib/karuraBoundary';
 
 interface SuggestPlaceModalProps {
   open: boolean;
@@ -8,6 +9,7 @@ interface SuggestPlaceModalProps {
   onClose: () => void;
   onStartChoosingLocation: () => void;
   onSubmitted: () => void;
+  accessMessage?: string;
 }
 
 export default function SuggestPlaceModal({
@@ -16,6 +18,7 @@ export default function SuggestPlaceModal({
   onClose,
   onStartChoosingLocation,
   onSubmitted,
+  accessMessage = '',
 }: SuggestPlaceModalProps) {
   const [type, setType] = useState('landmark');
   const [name, setName] = useState('');
@@ -40,6 +43,12 @@ export default function SuggestPlaceModal({
     return () => document.removeEventListener('keydown', handleKeyDown, true);
   }, [open, onClose]);
 
+  useEffect(() => {
+    if (open && accessMessage) {
+      setMessage(accessMessage);
+    }
+  }, [open, accessMessage]);
+
   if (!open) return null;
 
   const submitSuggestion = async (event: React.FormEvent<HTMLFormElement>) => {
@@ -48,6 +57,11 @@ export default function SuggestPlaceModal({
 
     if (!coordinates) {
       setMessage('Choose a location on the map before submitting.');
+      return;
+    }
+
+    if (!isPointWithinForestBoundaryTolerance(coordinates.latitude, coordinates.longitude)) {
+      setMessage('Please choose a location inside Karura Forest or Sigiria Forest.');
       return;
     }
 
