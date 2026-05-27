@@ -6,6 +6,10 @@ import { mapConfig } from "../data/mapConfig";
 import type { PublicPlaceSuggestion } from "../lib/placeSuggestions";
 import type { SiteSettings } from "../lib/siteSettings";
 import type { PublicTrailSuggestion } from "../lib/trailSuggestions";
+import {
+  MAX_LOCATION_ACCURACY_METERS,
+  isPointWithinForestBoundaryTolerance,
+} from "../lib/karuraBoundary";
 import Header from "./Header";
 import PrototypeBanner from "./PrototypeBanner";
 import FilterControls from "./FilterControls";
@@ -19,6 +23,7 @@ import SuggestPlaceModal from "./SuggestPlaceModal";
 import RecordTrailModal from "./RecordTrailModal";
 import TrailInfoPanel, { TrailProperties } from "./TrailInfoPanel";
 
+// Define available categories for filters.
 const CATEGORY_LIST = [
   'Walk & Jog',
   'Cycling',
@@ -28,6 +33,10 @@ const CATEGORY_LIST = [
 
 const MAP_STYLE_URL = 'https://basemaps.cartocdn.com/gl/positron-gl-style/style.json';
 
+/**
+ * Primary map view component. Handles map setup, data loading, user interactions,
+ * modals and filters. This component runs only on the client.
+ */
 export default function MapView({
   siteSettings,
   approvedPlaceSuggestions,
@@ -37,28 +46,109 @@ export default function MapView({
   approvedPlaceSuggestions: PublicPlaceSuggestion[];
   approvedTrailSuggestions: PublicTrailSuggestion[];
 }) {
+  // Modal state
   const [aboutOpen, setAboutOpen] = useState(false);
   const [donateOpen, setDonateOpen] = useState(false);
   const [safetyOpen, setSafetyOpen] = useState(false);
   const [boundaryInfoOpen, setBoundaryInfoOpen] = useState(false);
   const [suggestOpen, setSuggestOpen] = useState(false);
   const [recordTrailOpen, setRecordTrailOpen] = useState(false);
+  const [contributionCheckMessage, setContributionCheckMessage] = useState('');
+  const [checkingContributionLocation, setCheckingContributionLocation] = useState(false);
   const [recordingTrailPoints, setRecordingTrailPoints] = useState<Array<{ latitude: number; longitude: number }>>([]);
   const [choosingSuggestionLocation, setChoosingSuggestionLocation] = useState(false);
   const [suggestionCoordinates, setSuggestionCoordinates] = useState<{
     latitude: number;
     longitude: number;
   } | null>(null);
+  // Selected trail details
   const [selectedTrail, setSelectedTrail] = useState<TrailProperties | null>(null);
+  // Selected filter category
   const [selectedCategory, setSelectedCategory] = useState<string>('All');
 
+  // Map container and map instance refs
   const mapContainerRef = useRef<HTMLDivElement | null>(null);
   const mapRef = useRef<Map | null>(null);
   const [mapInstance, setMapInstance] = useState<Map | null>(null);
   const suggestionModeRef = useRef(false);
   const suggestionMarkerRef = useRef<Marker | null>(null);
+  // Keep track of loaded data to avoid re-fetching
   const dataLoadedRef = useRef(false);
   const interactionsBoundRef = useRef(false);
+
+  const geolocationGateErrorMessage = (error: GeolocationPositionError) => {
+    if (error.code === error.PERMISSION_DENIED) {
+      return 'Location access is required for this feature so that map contributions are made from within the forest.';
+    }
+    if (error.code === error.TIMEOUT) {
+      return 'We could not confirm your location. Please check that location services are enabled and try again.';
+    }
+    return 'We could not confirm your location. Please check that location services are enabled and try again.';
+  };
+
+  const confirmContributionLocation = async () => {
+    if (typeof window === 'undefined' || !navigator.geolocation) {
+      setContributionCheckMessage('Geolocation is not supported by this browser.');
+      return false;
+    }
+
+    setCheckingContributionLocation(true);
+    setContributionCheckMessage('Checking your location...');
+
+    try {
+      const position = await new Promise<GeolocationPosition>((resolve, reject) => {
+        navigator.geolocation.getCurrentPosition(resolve, reject, {
+          enableHighAccuracy: true,
+          timeout: 15000,
+          maximumAge: 5000,
+        });
+      });
+
+      if (position.coords.accuracy > MAX_LOCATION_ACCURACY_METERS) {
+        setContributionCheckMessage(
+          `Your location accuracy is currently about ${Math.round(position.coords.accuracy)} metres. Please wait a moment or move to a more open area, then try again.`,
+        );
+        return false;
+      }
+
+      if (!isPointWithinForestBoundaryTolerance(position.coords.latitude, position.coords.longitude)) {
+        setContributionCheckMessage(
+          'This feature is available only inside Karura Forest and Sigiria Forest. Your current location appears to be outside the forest boundary.',
+        );
+        return false;
+      }
+
+      setContributionCheckMessage('');
+      return true;
+    } catch (error) {
+      const geolocationError =
+        typeof error === 'object' && error !== null && 'code' in error
+          ? (error as GeolocationPositionError)
+          : null;
+      setContributionCheckMessage(
+        geolocationError
+          ? geolocationGateErrorMessage(geolocationError)
+          : 'We could not confirm your location. Please check that location services are enabled and try again.',
+      );
+      return false;
+    } finally {
+      setCheckingContributionLocation(false);
+    }
+  };
+
+  const openSuggestPlace = async () => {
+    const allowed = await confirmContributionLocation();
+    if (allowed) {
+      setSuggestOpen(true);
+    }
+  };
+
+  const openRecordTrail = async () => {
+    const allowed = await confirmContributionLocation();
+    if (allowed) {
+      setRecordTrailOpen(true);
+    }
+  };
 
   useEffect(() => {
     const map = mapRef.current;
@@ -109,6 +199,7 @@ export default function MapView({
   }, [mapInstance, suggestionCoordinates]);
 
   useEffect(() => {
+    // Initialize the map only once
     if (mapRef.current || !mapContainerRef.current) return;
 
     let cancelled = false;
@@ -516,6 +607,14 @@ export default function MapView({
 
         map.on('click', (e: any) => {
           if (suggestionModeRef.current) {
+            if (!isPointWithinForestBoundaryTolerance(e.lngLat.lat, e.lngLat.lng)) {
+              setSuggestionCoordinates(null);
+              setContributionCheckMessage('Please choose a location inside Karura Forest or Sigiria Forest.');
+              setChoosingSuggestionLocation(false);
+              setSuggestOpen(true);
+              return;
+            }
+
             setSuggestionCoordinates({
               latitude: e.lngLat.lat,
               longitude: e.lngLat.lng,
@@ -564,6 +663,7 @@ export default function MapView({
     };
   }, []);
 
+  // Apply category filters when selectedCategory changes
   useEffect(() => {
     const map = mapRef.current;
     if (!map || !dataLoadedRef.current) return;
@@ -574,6 +674,7 @@ export default function MapView({
       !map.getLayer('approved-suggestions-circle') ||
       !map.getLayer('gates-circle')
     ) return;
+    // Reset filters
     try {
       map.setFilter('trails-line', null);
       map.setFilter('approved-trails-line', null);
@@ -584,6 +685,7 @@ export default function MapView({
         map.setFilter('gates-label', null);
       }
     } catch (err) {
+      // Map not ready
       return;
     }
     if (selectedCategory === 'All') {
@@ -659,10 +761,12 @@ export default function MapView({
       />
       <main className="map-shell relative flex-1 min-h-[600px]">
         <div ref={mapContainerRef} className="absolute inset-0" />
+        {/* Prototype banner */}
         <PrototypeBanner
           show={siteSettings.showPrototypeBanner}
           text={siteSettings.prototypeBannerText}
         />
+        {/* Filter controls and map action buttons */}
         <div
           className={`map-control-panel absolute left-1 z-10 max-w-[calc(100vw-0.5rem)] rounded-md border border-[var(--sage-border)] bg-[var(--card-bg)]/80 p-1.5 shadow backdrop-blur-sm ${
             siteSettings.showPrototypeBanner ? 'top-11' : 'top-1'
@@ -678,22 +782,29 @@ export default function MapView({
             {siteSettings.enablePlaceSuggestions ? (
               <button
                 type="button"
-                onClick={() => setSuggestOpen(true)}
+                onClick={openSuggestPlace}
+                disabled={checkingContributionLocation}
                 className="min-h-9 rounded bg-[var(--donate-amber)] px-3 py-1.5 text-xs font-semibold text-white shadow"
               >
-                Suggest Place
+                {checkingContributionLocation ? 'Checking...' : 'Suggest Place'}
               </button>
             ) : null}
             {siteSettings.enablePublicTrailRecording ? (
               <button
                 type="button"
-                onClick={() => setRecordTrailOpen(true)}
+                onClick={openRecordTrail}
+                disabled={checkingContributionLocation}
                 className="min-h-9 rounded bg-[var(--forest-header)] px-3 py-1.5 text-xs font-semibold text-[var(--warm-ivory)] shadow"
               >
-                Record Trail
+                {checkingContributionLocation ? 'Checking...' : 'Record Trail'}
               </button>
             ) : null}
           </div>
+          {contributionCheckMessage ? (
+            <p className="mt-1.5 max-w-[14rem] rounded bg-[var(--sand-yellow)] px-2 py-1 text-[10px] leading-snug text-[var(--brown-olive)] shadow">
+              {contributionCheckMessage}
+            </p>
+          ) : null}
           {choosingSuggestionLocation ? (
             <p className="mt-1.5 max-w-[10.5rem] rounded bg-[var(--sand-yellow)] px-2 py-1 text-[10px] leading-snug text-[var(--brown-olive)] shadow">
               Tap or click the map to choose the location.
@@ -701,8 +812,10 @@ export default function MapView({
           ) : null}
         </div>
         <NatureAnimations />
+        {/* Trail information panel */}
         <TrailInfoPanel trail={selectedTrail} onClose={() => setSelectedTrail(null)} />
       </main>
+      {/* Modals */}
       <AboutModal
         open={aboutOpen}
         settings={siteSettings}
@@ -726,13 +839,16 @@ export default function MapView({
         onClose={() => {
           setSuggestOpen(false);
           setChoosingSuggestionLocation(false);
+          setContributionCheckMessage('');
           suggestionMarkerRef.current?.remove();
           suggestionMarkerRef.current = null;
           setSuggestionCoordinates(null);
         }}
+        accessMessage={contributionCheckMessage}
         onStartChoosingLocation={() => {
           setChoosingSuggestionLocation(true);
           setSuggestOpen(false);
+          setContributionCheckMessage('');
         }}
         onSubmitted={() => {
           suggestionMarkerRef.current?.remove();
