@@ -10,10 +10,10 @@ export const KARURA_BOUNDS = {
 export const FOREST_BOUNDARY_TOLERANCE_METERS = 50;
 export const MAX_LOCATION_ACCURACY_METERS = 100;
 
-type Coordinate = [number, number];
-type Ring = Coordinate[];
-type PolygonCoordinates = Ring[];
-type MultiPolygonCoordinates = PolygonCoordinates[];
+type Coordinate = readonly [number, number];
+type Ring = readonly Coordinate[];
+type PolygonCoordinates = readonly Ring[];
+type MultiPolygonCoordinates = readonly PolygonCoordinates[];
 
 type BoundaryFeature = {
   geometry?: {
@@ -22,7 +22,9 @@ type BoundaryFeature = {
   };
 };
 
-const FOREST_POLYGONS: PolygonCoordinates[] = ((boundaryData as { features?: BoundaryFeature[] }).features ?? [])
+const FOREST_POLYGONS: readonly PolygonCoordinates[] = (
+  (boundaryData as { features?: readonly BoundaryFeature[] }).features ?? []
+)
   .flatMap((feature) => {
     if (feature.geometry?.type === 'Polygon') {
       return [feature.geometry.coordinates as PolygonCoordinates];
