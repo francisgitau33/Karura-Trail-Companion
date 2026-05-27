@@ -1,4 +1,5 @@
 import { isDatabaseConfigured, query } from './db';
+import { isPointWithinForestBoundaryTolerance } from './karuraBoundary';
 
 export type PlaceSuggestionType = 'landmark' | 'facility';
 export type PlaceSuggestionStatus = 'pending' | 'approved' | 'rejected' | 'merged' | 'archived';
@@ -43,13 +44,6 @@ export interface PlaceSuggestionReviewInput {
   adminNotes?: string;
 }
 
-const KARURA_BOUNDS = {
-  minLat: -1.275,
-  maxLat: -1.215,
-  minLng: 36.785,
-  maxLng: 36.855,
-};
-
 const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 function cleanText(value: string, maxLength: number) {
@@ -58,17 +52,6 @@ function cleanText(value: string, maxLength: number) {
 
 function isValidType(type: string): type is PlaceSuggestionType {
   return type === 'landmark' || type === 'facility';
-}
-
-function isInKaruraBounds(latitude: number, longitude: number) {
-  return (
-    Number.isFinite(latitude) &&
-    Number.isFinite(longitude) &&
-    latitude >= KARURA_BOUNDS.minLat &&
-    latitude <= KARURA_BOUNDS.maxLat &&
-    longitude >= KARURA_BOUNDS.minLng &&
-    longitude <= KARURA_BOUNDS.maxLng
-  );
 }
 
 export function validatePlaceSuggestionInput(input: PlaceSuggestionInput) {
@@ -92,8 +75,8 @@ export function validatePlaceSuggestionInput(input: PlaceSuggestionInput) {
     return 'Short description is required.';
   }
 
-  if (!isInKaruraBounds(input.latitude, input.longitude)) {
-    return 'Choose a location within the Karura Forest map area.';
+  if (!isPointWithinForestBoundaryTolerance(input.latitude, input.longitude)) {
+    return 'Please choose a location inside Karura Forest or Sigiria Forest.';
   }
 
   if (contactEmail && !EMAIL_PATTERN.test(contactEmail)) {
