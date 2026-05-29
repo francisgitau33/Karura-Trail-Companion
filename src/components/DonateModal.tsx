@@ -30,7 +30,7 @@ export default function DonateModal({ open, settings, onClose }: DonateModalProp
   const visitWebsite = () => {
     const url = settings.websiteUrl;
     if (url && url.startsWith('http')) {
-      window.open(url, '_blank');
+      window.open(url, '_blank', 'noopener,noreferrer');
     }
   };
   return (

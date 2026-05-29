@@ -518,6 +518,31 @@ export default function MapView({
                 setSelectedTrail(trail);
               });
 
+
+              const createSafeDOMNode = (title: string, lines: Array<{type?: string, text?: string}>) => {
+                const container = document.createElement('div');
+                
+                const titleEl = document.createElement('strong');
+                titleEl.textContent = title;
+                container.appendChild(titleEl);
+                
+                for (const line of lines) {
+                  container.appendChild(document.createElement('br'));
+                  if (line.type === 'small') {
+                    const el = document.createElement('small');
+                    el.textContent = line.text || '';
+                    container.appendChild(el);
+                  } else if (line.type === 'em') {
+                    const el = document.createElement('em');
+                    el.textContent = line.text || '';
+                    container.appendChild(el);
+                  } else if (line.text) {
+                    container.appendChild(document.createTextNode(line.text || ''));
+                  }
+                }
+                return container;
+              };
+
               const showPoiPopup = (e: any) => {
                 if (!e.features || !e.features.length) return;
 
@@ -526,10 +551,14 @@ export default function MapView({
                 const coords = feature.geometry.coordinates.slice();
                 const props = feature.properties as any;
                 const category = props.popupCategory || props.category;
-                const html = `<strong>${props.name}</strong><br />Category: ${category}<br />${props.description}<br /><small>${props.status}</small>`;
+                const domNode = createSafeDOMNode(props.name, [
+                  { text: `Category: ${category}` },
+                  { text: props.description },
+                  { type: 'small', text: props.status }
+                ]);
                 new maplibre.Popup()
                   .setLngLat(coords)
-                  .setHTML(html)
+                  .setDOMContent(domNode)
                   .addTo(map);
               };
 
@@ -550,10 +579,16 @@ export default function MapView({
                 const props = feature.properties as any;
                 const distanceKm = props.distanceMeters ? (Number(props.distanceMeters) / 1000).toFixed(2) : '0.00';
                 const durationMin = props.durationSeconds ? Math.round(Number(props.durationSeconds) / 60) : 0;
-                const html = `<strong>${props.name}</strong><br />Category: ${props.category}<br />Distance: ${distanceKm} km<br />Duration: ${durationMin} min<br />${props.description}<br /><small>${props.status}</small>`;
+                const domNode = createSafeDOMNode(props.name, [
+                  { text: `Category: ${props.category}` },
+                  { text: `Distance: ${distanceKm} km` },
+                  { text: `Duration: ${durationMin} min` },
+                  { text: props.description },
+                  { type: 'small', text: props.status }
+                ]);
                 new maplibre.Popup()
                   .setLngLat(e.lngLat)
-                  .setHTML(html)
+                  .setDOMContent(domNode)
                   .addTo(map);
               });
 
@@ -563,10 +598,15 @@ export default function MapView({
                 if (!feature) return;
                 const coords = feature.geometry.coordinates.slice();
                 const props = feature.properties as any;
-                const html = `<strong>${props.name}</strong><br />Access: ${props.access}<br />${props.description}<br /><em>${props.visitor_note}</em><br /><small>${props.status}</small>`;
+                const domNode = createSafeDOMNode(props.name, [
+                  { text: `Access: ${props.access}` },
+                  { text: props.description },
+                  { type: 'em', text: props.visitor_note },
+                  { type: 'small', text: props.status }
+                ]);
                 new maplibre.Popup()
                   .setLngLat(coords)
-                  .setHTML(html)
+                  .setDOMContent(domNode)
                   .addTo(map);
               });
 
@@ -576,10 +616,15 @@ export default function MapView({
                 if (!feature) return;
                 const coords = feature.geometry.coordinates.slice();
                 const props = feature.properties as any;
-                const html = `<strong>${props.name}</strong><br />Access: ${props.access}<br />${props.description}<br /><em>${props.visitor_note}</em><br /><small>${props.status}</small>`;
+                const domNode = createSafeDOMNode(props.name, [
+                  { text: `Access: ${props.access}` },
+                  { text: props.description },
+                  { type: 'em', text: props.visitor_note },
+                  { type: 'small', text: props.status }
+                ]);
                 new maplibre.Popup()
                   .setLngLat(coords)
-                  .setHTML(html)
+                  .setDOMContent(domNode)
                   .addTo(map);
               });
 
