@@ -2,8 +2,20 @@
 
 import { redirect } from 'next/navigation';
 import { loginPlatformOwner } from '../../../lib/auth';
+import { limiters, getClientIp } from '../../../lib/rateLimit';
 
 export async function loginAction(formData: FormData) {
+  const ip = await getClientIp();
+  
+  try {
+    const rateLimitResult = await limiters.adminLogin.limit(ip);
+    if (!rateLimitResult.success) {
+      redirect('/admin/login?error=Too%20many%20login%20attempts.%20Please%20try%20again%20later.');
+    }
+  } catch (error) {
+    console.error('Rate limit check failed for admin login:', error);
+  }
+
   const email = String(formData.get('email') ?? '');
   const password = String(formData.get('password') ?? '');
 

@@ -41,6 +41,21 @@ if (fs.existsSync('./src')) {
   console.log('[SKIP] No src directory found.');
 }
 
+
+// Check rate limit integrations
+if (fs.existsSync('src/app/api/place-suggestions/route.ts')) {
+  const content = fs.readFileSync('src/app/api/place-suggestions/route.ts', 'utf8');
+  if (!content.includes('limiters.placeSuggestion.limit')) reportError('Missing rate limit check in place-suggestions route');
+}
+if (fs.existsSync('src/app/api/trail-suggestions/route.ts')) {
+  const content = fs.readFileSync('src/app/api/trail-suggestions/route.ts', 'utf8');
+  if (!content.includes('limiters.trailSuggestion.limit')) reportError('Missing rate limit check in trail-suggestions route');
+}
+if (fs.existsSync('src/app/admin/login/actions.ts')) {
+  const content = fs.readFileSync('src/app/admin/login/actions.ts', 'utf8');
+  if (!content.includes('limiters.adminLogin.limit')) reportError('Missing rate limit check in admin login action');
+}
+
 // Check headers in next.config.js
 if (fs.existsSync('next.config.js')) {
   const config = fs.readFileSync('next.config.js', 'utf8');
@@ -54,10 +69,11 @@ if (fs.existsSync('next.config.js')) {
   reportError('next.config.js not found.');
 }
 
+
 // Check for .env files
 const rootFiles = fs.readdirSync('.');
 for (const file of rootFiles) {
-  if (file === '.env' || file.startsWith('.env.')) {
+  if (file === '.env' || (file.startsWith('.env.') && file !== '.env.example')) {
     reportError(`Found potentially sensitive file: ${file}`);
   }
 }

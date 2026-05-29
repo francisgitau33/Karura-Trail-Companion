@@ -13,6 +13,8 @@
     "cms:setup-admin": "node scripts/seed-initial-admin.mjs"
   },
   "dependencies": {
+    "@upstash/ratelimit": "^2.0.8",
+    "@upstash/redis": "^1.38.0",
     "bcryptjs": "^2.4.3",
     "maplibre-gl": "^3.5.2",
     "next": "16.2.6",

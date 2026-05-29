@@ -53,7 +53,7 @@ export default async function AdminLoginPage({
           {params?.error ? <p className="text-sm text-[var(--safety-red)]">{params.error}</p> : null}
           <button
             type="submit"
-            disabled={!setupStatus.isConfigured}
+            disabled={!setupStatus.isConfigured && !params?.error?.includes("Too many login attempts")}
             className="w-full rounded bg-[var(--forest-header)] px-4 py-2 text-sm font-semibold text-[var(--warm-ivory)]"
           >
             Sign in

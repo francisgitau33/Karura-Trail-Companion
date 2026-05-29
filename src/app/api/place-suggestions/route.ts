@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { createPlaceSuggestion } from '../../../lib/placeSuggestions';
 import { getSiteSettings } from '../../../lib/siteSettings';
+import { limiters, getClientIp, isRateLimitConfigured } from '../../../lib/rateLimit';
 
 export async function POST(request: Request) {
   try {
@@ -9,6 +10,23 @@ export async function POST(request: Request) {
       return NextResponse.json(
         { ok: false, message: 'Suggestions are currently closed.' },
         { status: 403 },
+      );
+    }
+    
+    if (process.env.NODE_ENV === 'production' && !isRateLimitConfigured()) {
+       console.error('CRITICAL: Public place suggestions enabled in production but persistent rate limit is NOT configured.');
+       return NextResponse.json(
+         { ok: false, message: 'Service temporarily unavailable. Configuration error.' },
+         { status: 503 }
+       );
+    }
+
+    const ip = await getClientIp();
+    const rateLimitResult = await limiters.placeSuggestion.limit(ip);
+    if (!rateLimitResult.success) {
+      return NextResponse.json(
+        { ok: false, message: 'Too many requests. Please try again later.' },
+        { status: 429 }
       );
     }
 
