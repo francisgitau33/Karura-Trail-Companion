@@ -2,18 +2,30 @@
 
 import { redirect } from 'next/navigation';
 import { loginPlatformOwner } from '../../../lib/auth';
-import { limiters, getClientIp } from '../../../lib/rateLimit';
+import { limiters, getClientIp, isRateLimitConfigured } from '../../../lib/rateLimit';
 
 export async function loginAction(formData: FormData) {
+  if (process.env.NODE_ENV === 'production' && !isRateLimitConfigured()) {
+    console.error('CRITICAL: Admin login attempted in production but persistent rate limit is NOT configured.');
+    redirect('/admin/login?error=Login%20is%20temporarily%20unavailable.');
+  }
+
   const ip = await getClientIp();
   
+  let rateLimitSuccess = true;
   try {
     const rateLimitResult = await limiters.adminLogin.limit(ip);
-    if (!rateLimitResult.success) {
-      redirect('/admin/login?error=Too%20many%20login%20attempts.%20Please%20try%20again%20later.');
-    }
+    rateLimitSuccess = rateLimitResult.success;
   } catch (error) {
     console.error('Rate limit check failed for admin login:', error);
+    // In production, fail closed on Upstash failure
+    if (process.env.NODE_ENV === 'production') {
+      redirect('/admin/login?error=Login%20is%20temporarily%20unavailable.');
+    }
+  }
+
+  if (!rateLimitSuccess) {
+    redirect('/admin/login?error=Too%20many%20login%20attempts.%20Please%20try%20again%20later.');
   }
 
   const email = String(formData.get('email') ?? '');
