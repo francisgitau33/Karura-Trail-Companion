@@ -8,9 +8,10 @@
     "build:local": "next build",
     "typecheck": "tsc --noEmit",
     "lint": "eslint src",
-    "test": "node scripts/static-checks.mjs",
+    "test": "node scripts/managed-gates-tests.mjs && node scripts/static-checks.mjs",
     "start": "next start",
-    "cms:setup-admin": "node scripts/seed-initial-admin.mjs"
+    "cms:setup-admin": "node scripts/seed-initial-admin.mjs",
+    "seed:gates": "node scripts/seed-managed-gates.mjs"
   },
   "dependencies": {
     "@upstash/ratelimit": "^2.0.8",

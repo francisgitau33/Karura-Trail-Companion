@@ -34,6 +34,42 @@ function checkDir(dir) {
   }
 }
 
+
+function requireFile(filePath, label) {
+  if (!fs.existsSync(filePath)) {
+    reportError(`${label} missing at ${filePath}.`);
+    return '';
+  }
+  return fs.readFileSync(filePath, 'utf8');
+}
+
+function checkManagedGatesFoundation() {
+  requireFile('migrations/008_managed_gates.sql', 'Managed gates migration');
+  requireFile('src/lib/gates.ts', 'Managed gates library');
+  requireFile('public/data/gates.geojson', 'Static gate GeoJSON');
+  const seedScript = requireFile('scripts/seed-managed-gates.mjs', 'Managed gates seed script');
+
+  if (seedScript) {
+    if (!seedScript.includes('ON CONFLICT (stable_id) DO NOTHING')) {
+      reportError('Managed gates seed script must use ON CONFLICT (stable_id) DO NOTHING.');
+    }
+
+    const credentialPatterns = [
+      /postgres(?:ql)?:\/\/[^\s'"]+/i,
+      /DATABASE_URL\s*=\s*['"][^'"]+['"]/,
+      /password\s*=\s*['"][^'"]+['"]/i,
+    ];
+
+    for (const pattern of credentialPatterns) {
+      if (pattern.test(seedScript)) {
+        reportError('Managed gates seed script appears to contain hard-coded database credentials.');
+      }
+    }
+  }
+}
+
+checkManagedGatesFoundation();
+
 // Check source files
 if (fs.existsSync('./src')) {
   checkDir('./src');
