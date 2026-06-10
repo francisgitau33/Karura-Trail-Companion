@@ -64,6 +64,25 @@ This creates:
 * `site_settings`
 * `audit_log`
 
+
+### Persistent Rate Limiting
+
+The application uses Upstash Redis for persistent rate limiting to protect sensitive routes against brute force attacks and spam.
+
+* Admin Login: 5 attempts per 15 minutes per IP.
+* Place Suggestions: 10 submissions per hour per IP.
+* Trail Suggestions: 5 submissions per hour per IP.
+
+**Important:** If persistent rate limiting is NOT configured via `UPSTASH_REDIS_REST_URL` and `UPSTASH_REDIS_REST_TOKEN`, the public submission routes (`/api/place-suggestions` and `/api/trail-suggestions`) will fail safely with a 503 error in production if they are enabled via the CMS. 
+
+In local development, a fallback memory limiter is used if Redis is unconfigured to allow testing.
+
+Required environment variables:
+```bash
+UPSTASH_REDIS_REST_URL=
+UPSTASH_REDIS_REST_TOKEN=
+```
+
 ### Required Environment Variables
 
 Set these in Vercel and in any local environment used for admin/CMS work:
