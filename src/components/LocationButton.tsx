@@ -2,6 +2,13 @@
 
 import React, { useEffect, useRef, useState } from 'react';
 import type { Map, Marker } from 'maplibre-gl';
+import {
+  MAX_LOCATION_ACCURACY_METERS,
+  isPointWithinForestBoundaryTolerance,
+} from '../lib/karuraBoundary';
+
+const OUTSIDE_FOREST_LOCATION_MESSAGE =
+  'This feature is available only inside Karura Forest and Sigiria Forest. Your current location appears to be outside the forest boundary.';
 
 interface LocationButtonProps {
   map: Map | null;
@@ -72,7 +79,37 @@ export default function LocationButton({ map }: LocationButtonProps) {
     setLoading(true);
     navigator.geolocation.getCurrentPosition(
       async (position) => {
-        const { latitude, longitude } = position.coords;
+        const { latitude, longitude, accuracy } = position.coords;
+
+        if (!Number.isFinite(latitude) || !Number.isFinite(longitude)) {
+          markerRef.current?.remove();
+          markerRef.current = null;
+          setEnabled(false);
+          setLoading(false);
+          setMessage('Your location could not be determined. Please check that location services are enabled and try again.');
+          return;
+        }
+
+        if (accuracy > MAX_LOCATION_ACCURACY_METERS) {
+          markerRef.current?.remove();
+          markerRef.current = null;
+          setEnabled(false);
+          setLoading(false);
+          setMessage(
+            `Your location accuracy is currently about ${Math.round(accuracy)} metres. Please wait a moment or move to a more open area, then try again.`,
+          );
+          return;
+        }
+
+        if (!isPointWithinForestBoundaryTolerance(latitude, longitude)) {
+          markerRef.current?.remove();
+          markerRef.current = null;
+          setEnabled(false);
+          setLoading(false);
+          setMessage(OUTSIDE_FOREST_LOCATION_MESSAGE);
+          return;
+        }
+
         try {
           const maplibreModule = await import('maplibre-gl');
           const maplibre = maplibreModule.default ?? maplibreModule;
