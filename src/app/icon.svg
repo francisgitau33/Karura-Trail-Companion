@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" role="img" aria-label="Tree favicon">
+  <rect width="32" height="32" rx="6" fill="#f7f3e8"/>
+  <path fill="#174f2a" d="M16 3 5 18h6L7 24h18l-4-6h6L16 3Z"/>
+  <rect x="13" y="20" width="6" height="8" rx="1" fill="#5b3a1e"/>
+  <path fill="#226b35" d="M16 7 8 18h16L16 7Z"/>
+</svg>
